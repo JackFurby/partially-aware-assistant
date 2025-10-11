@@ -1,0 +1,30 @@
+{% extends "security/_base.html" %}
+{% from "security/_macros.html" import render_field_with_errors, render_field, render_field_errors, render_form_errors %}
+
+{% block content %}
+<div class="flex justify-center pt-20">
+	<div class="w-full max-w-md bg-white shadow-md rounded-lg overflow-hidden">
+		<div class="px-6 py-4 border-b">
+			<h1 class="text-2xl font-semibold">Change email</h1>
+		</div>
+		<div class="px-6 py-4">
+			<h3 class="mb-4">{{ _fsdomain('Once submitted, an email confirmation will be sent to this new email address.') }}</h3>
+			<form action="{{ url_for_security('change_email') }}" method="post" name="change_email_form">
+				{{ change_email_form.hidden_tag() }}
+
+				<p class="mb-4">
+					{{ change_email_form.email.label(class_='block text-sm font-medium text-gray-700') }}
+					{{ change_email_form.email(class_='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50') }}
+					{% for error in change_email_form.email.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</p>
+
+				<p>
+					{{ change_email_form.submit(class_='w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded') }}
+				</p>
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock content %}

@@ -1,0 +1,77 @@
+{% extends "security/_base.html" %}
+{% from "security/_macros.html" import render_field_with_errors, render_field, render_field_no_label, render_field_errors %}
+
+{% block content %}
+{% include "security/_messages.html" %}
+
+<div class="flex justify-center pt-12 px-4">
+	<div class="w-full max-w-lg bg-white rounded shadow-md overflow-hidden">
+		<div class="px-6 py-6">
+			<h1 class="text-2xl font-semibold text-gray-900 mb-2">
+				{{ _fsdomain("Two-factor authentication adds an extra layer of security to your account") }}
+			</h1>
+			<h2 class="text-gray-700 mb-6">
+				{{ _fsdomain("In addition to your username and password, you'll need to use a code that we will send you") }}
+			</h2>
+
+			<form action="{{ url_for_security("two_factor_setup") }}" method="POST" name="two_factor_setup_form" class="space-y-4">
+				{{ two_factor_setup_form.hidden_tag() }}
+
+				{% for subfield in two_factor_setup_form.setup %}
+					{% if subfield.data in choices %}
+						{{ render_field_with_errors(subfield, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% endif %}
+				{% endfor %}
+
+				{{ render_field_errors(two_factor_setup_form.setup) }}
+
+				<div>
+					{{ render_field(two_factor_setup_form.submit, class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+				</div>
+
+				{% if chosen_method=="email" and chosen_method in choices %}
+					<p class="text-gray-700 mt-4">{{ _fsdomain("To complete logging in, please enter the code sent to your mail") }}</p>
+				{% endif %}
+
+				{% if chosen_method=="authenticator" and chosen_method in choices %}
+					<hr class="my-4">
+					<div class="text-center space-y-4">
+						<div class="text-gray-700">
+							{{ _fsdomain("Open an authenticator app on your device and scan the following QRcode (or enter the code below manually) to start receiving codes:") }}
+						</div>
+						<div>
+							<img alt="{{ _fsdomain("Two factor authentication code") }}" id="qrcode" src="{{ authr_qrcode }}" class="mx-auto">
+						</div>
+						<div class="font-mono text-gray-800">
+							{{ authr_key }}
+						</div>
+					</div>
+				{% endif %}
+
+				{% if chosen_method=="sms" and chosen_method in choices %}
+					<p class="text-gray-700 mt-4">{{ _fsdomain("To Which Phone Number Should We Send Code To?") }}</p>
+					{{ two_factor_setup_form.hidden_tag() }}
+					{{ render_field_with_errors(two_factor_setup_form.phone, placeholder="enter phone number", class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					<div>
+						{{ render_field(two_factor_setup_form.submit, class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+					</div>
+				{% endif %}
+			</form>
+
+			<hr class="my-6">
+
+			<form action="{{ url_for_security("two_factor_token_validation") }}" method="POST" name="two_factor_verify_code_form" class="space-y-4">
+				{{ two_factor_verify_code_form.hidden_tag() }}
+				{{ render_field_with_errors(two_factor_verify_code_form.code, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+				<div>
+					{{ render_field(two_factor_verify_code_form.submit, class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+				</div>
+			</form>
+
+			<div class="mt-6 text-center">
+				{% include "security/_menu.html" %}
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

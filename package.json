@@ -1,0 +1,31 @@
+{
+  "name": "partially-aware-assistant",
+  "version": "1.0.0",
+  "description": "A personal AI assistant with memory",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JackFurby/partially-aware-assistant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JackFurby/partially-aware-assistant/issues"
+  },
+  "homepage": "https://github.com/JackFurby/partially-aware-assistant#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.14"
+  }
+}

@@ -1,0 +1,80 @@
+{% extends "template_parts/base.html" %}
+
+{% block content %}
+<main class="flex-1 px-4 sm:px-6 lg:px-8 mt-4">
+	<div class="bg-white p-6 rounded shadow">
+		<div class="flex justify-between flex-wrap items-center pb-3">
+			<h1 class="text-2xl font-semibold text-gray-900">Profile</h1>
+		</div>
+		<hr class="my-4 border-gray-300"/>
+
+		<h2 class="text-xl font-semibold mb-2">About</h2>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+			<p><span class="font-semibold">ID:</span> {{ user.id }}</p>
+			<p><span class="font-semibold">Email:</span> {{ user.email }}</p>
+		</div>
+		<div class="mb-4">
+			<p class="font-semibold">Roles:</p>
+			<div class="flex flex-wrap gap-2 mt-1">
+				{% for role in user.roles %}
+					<span class="px-2 py-1 text-sm rounded-full bg-gray-400 text-white">{{ role.name }}</span>
+				{% endfor %}
+			</div>
+		</div>
+
+		<h2 class="text-xl font-semibold mb-2">Info</h2>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+			<p><span class="font-semibold">Last login time:</span> {{ user.last_login_at.strftime("%m/%d/%Y, %H:%M:%S") if user.last_login_at else user.last_login_at }}</p>
+			<p><span class="font-semibold">Current login time:</span> {{ user.current_login_at.strftime("%m/%d/%Y, %H:%M:%S") if user.current_login_at else user.current_login_at }}</p>
+			<p><span class="font-semibold">Last login IP:</span> {{ user.last_login_ip }}</p>
+			<p><span class="font-semibold">Current login IP:</span> {{ user.current_login_ip }}</p>
+			<p><span class="font-semibold">Login count:</span> {{ user.login_count }}</p>
+			<p><span class="font-semibold">Confirmed at:</span> {{ user.confirmed_at.strftime("%m/%d/%Y, %H:%M:%S") if user.confirmed_at else user.confirmed_at }}</p>
+			<p><span class="font-semibold">Created at:</span> {{ user.create_datetime.strftime("%m/%d/%Y, %H:%M:%S") if user.create_datetime else user.create_datetime }}</p>
+			<p><span class="font-semibold">Last updated at:</span> {{ user.update_datetime.strftime("%m/%d/%Y, %H:%M:%S") if user.update_datetime else user.update_datetime }}</p>
+		</div>
+
+		<hr class="my-4 border-gray-300"/>
+
+		<h2 class="text-xl font-semibold mb-2">Actions</h2>
+		<div class="flex flex-wrap gap-2">
+			{% if user.id == current_user.id %}
+				<a href="{{ url_for_security('change_password') }}" class="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100">Update password</a>
+				<a href="{{ url_for_security('change_email') }}" class="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100">Update email</a>
+			{% endif %}
+
+			{% if current_user.has_role('admin') and user.id != current_user.id %}
+				<div class="relative">
+					<button type="button" data-dropdown-toggle="addRoleDropdown" class="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100">
+						Add Role
+					</button>
+					<div id="addRoleDropdown" class="hidden absolute z-50 mt-2 w-44 bg-white border rounded shadow">
+						<ul class="py-1 text-gray-700">
+							{% for role in other_roles %}
+								<li>
+									<a href="{{ url_for('users.toggle_user_role', id=user.id, role_name=role.name) }}" class="block px-4 py-2 hover:bg-gray-100">{{ role.name }}</a>
+								</li>
+							{% endfor %}
+						</ul>
+					</div>
+				</div>
+
+				<div class="relative">
+					<button type="button" data-dropdown-toggle="removeRoleDropdown" class="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100">
+						Remove Role
+					</button>
+					<div id="removeRoleDropdown" class="hidden absolute z-50 mt-2 w-44 bg-white border rounded shadow">
+						<ul class="py-1 text-gray-700">
+							{% for role in has_roles %}
+								<li>
+									<a href="{{ url_for('users.toggle_user_role', id=user.id, role_name=role.name) }}" class="block px-4 py-2 hover:bg-gray-100">{{ role.name }}</a>
+								</li>
+							{% endfor %}
+						</ul>
+					</div>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+</main>
+{% endblock %}

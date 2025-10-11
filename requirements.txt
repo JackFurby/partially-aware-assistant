@@ -1,0 +1,13 @@
+Flask==3.1.*
+Flask-WTF==1.2.*
+flask-sqlalchemy==3.1.*
+flask-migrate==4.1.*
+libsass==0.23.*
+opencv-python==4.12.0.*
+wadllib==2.0.*
+six==1.17.*
+flask-login==0.6.*
+flask_mail==0.10.*
+flask_moment==1.0.*
+Flask-Security==5.6.*
+argon2_cffi==25.1.*

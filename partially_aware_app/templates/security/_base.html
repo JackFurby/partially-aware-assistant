@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<link href="{{ url_for('static', filename='src/output.css') }}" rel="stylesheet" type="text/css">
+		<script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.0/dist/flowbite.min.js"></script>
+
+		{% if title %}
+			<title>{{ title }} - Partially Aware</title>
+		{% else %}
+			<title>Reporter</title>
+		{% endif %}
+	</head>
+	<body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
+
+		{% with messages = get_flashed_messages(with_categories=true) %}
+			{% if messages %}
+				<div class="fixed top-0 left-0 right-0 z-50 space-y-2">
+					{% for category, message in messages %}
+						<div
+							class="flex items-center justify-between px-4 py-3 mx-auto w-full max-w-3xl text-sm text-white rounded shadow-md
+							{% if category == 'success' %} bg-green-500
+							{% elif category == 'danger' %} bg-red-500
+							{% elif category == 'warning' %} bg-yellow-500
+							{% else %} bg-blue-500 {% endif %}">
+
+							<span>{{ message }}</span>
+							<button
+								type="button"
+								class="text-white hover:text-gray-200 focus:outline-none"
+								onclick="this.parentElement.remove();"
+								aria-label="Close">
+								×
+							</button>
+						</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+		{% endwith %}
+
+		<div class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+			{% block content %}{% endblock %}
+		</div>
+
+		{% block footer %}
+		  {% include "security/_footer.html" %}
+		{% endblock %}
+
+	</body>
+</html>

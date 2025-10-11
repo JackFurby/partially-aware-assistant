@@ -1,0 +1,52 @@
+{% extends "security/_base.html" %}
+{% from "security/_macros.html" import render_field_with_errors, render_field %}
+
+{% block content %}
+{% include "security/_messages.html" %}
+
+<div class="flex justify-center pt-12 px-4">
+	<div class="w-full max-w-md bg-white rounded shadow-md overflow-hidden">
+		<div class="px-6 py-6">
+			<h1 class="text-2xl font-semibold text-gray-900 mb-2">{{ _fsdomain("Two-factor Authentication") }}</h1>
+			<h2 class="text-gray-700 mb-6">{{ _fsdomain("Please enter your authentication code") }}</h2>
+
+			<form action="{{ url_for_security("two_factor_token_validation") }}" method="POST" name="two_factor_verify_code_form" class="space-y-4">
+				{{ two_factor_verify_code_form.hidden_tag() }}
+
+				<div>
+					{{ render_field_with_errors(two_factor_verify_code_form.code, placeholder="enter code", class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+				</div>
+
+				<div>
+					{{ render_field(two_factor_verify_code_form.submit, class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+				</div>
+			</form>
+
+			<hr class="my-6">
+
+			<form action="{{ url_for_security("two_factor_rescue") }}" method="POST" name="two_factor_rescue_form" class="space-y-4">
+				{{ two_factor_rescue_form.hidden_tag() }}
+
+				<div>
+					{{ render_field_with_errors(two_factor_rescue_form.help_setup, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+				</div>
+
+				{% if problem=="lost_device" %}
+					<p class="text-gray-700">{{ _fsdomain("The code for authentication was sent to your email address") }}</p>
+				{% endif %}
+				{% if problem=="no_mail_access" %}
+					<p class="text-gray-700">{{ _fsdomain("A mail was sent to us in order to reset your application account") }}</p>
+				{% endif %}
+
+				<div>
+					{{ render_field(two_factor_rescue_form.submit, class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+				</div>
+			</form>
+
+			<div class="mt-6 text-center">
+				{% include "security/_menu.html" %}
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

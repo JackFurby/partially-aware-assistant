@@ -1,0 +1,68 @@
+{% extends "security/_base.html" %}
+
+{% block content %}
+<div class="flex justify-center pt-20 px-4">
+	<div class="w-full max-w-md bg-white rounded shadow-md overflow-hidden">
+		<div class="px-6 py-4 border-b">
+			<h1 class="text-2xl font-semibold text-gray-900">Register</h1>
+		</div>
+
+		<div class="px-6 py-6">
+			<form action="{{ url_for_security('register') }}" method="post" name="register_user_form" class="space-y-4">
+				{{ register_user_form.hidden_tag() }}
+
+				<div>
+					{{ register_user_form.first_name.label(class_='block text-gray-700 font-medium mb-1') }}
+					{{ register_user_form.first_name(size=255, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% for error in register_user_form.first_name.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</div>
+
+				<div>
+					{{ register_user_form.surname.label(class_='block text-gray-700 font-medium mb-1') }}
+					{{ register_user_form.surname(size=255, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% for error in register_user_form.surname.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</div>
+
+				<div>
+					{{ register_user_form.email.label(class_='block text-gray-700 font-medium mb-1') }}
+					{{ register_user_form.email(size=255, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% for error in register_user_form.email.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</div>
+
+				<div>
+					{{ register_user_form.password.label(class_='block text-gray-700 font-medium mb-1') }}
+					{{ register_user_form.password(size=32, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% for error in register_user_form.password.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</div>
+
+				<div>
+					{{ register_user_form.password_confirm.label(class_='block text-gray-700 font-medium mb-1') }}
+					{{ register_user_form.password_confirm(size=32, class_='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500') }}
+					{% for error in register_user_form.password_confirm.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+					{% for error in register_user_form.errors %}
+						<span class="text-red-600 text-sm">{{ error }}</span>
+					{% endfor %}
+				</div>
+
+				<div>
+					{{ register_user_form.submit(class_='w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500') }}
+				</div>
+			</form>
+
+			<p class="mt-4 text-center">
+				<a href="{{ url_for_security('login') }}" class="text-blue-600 hover:underline">back to login</a>
+			</p>
+		</div>
+	</div>
+</div>
+{% endblock %}
