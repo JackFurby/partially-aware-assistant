@@ -13,16 +13,25 @@
 			<div>
 				{{ form.email.label(class="block text-gray-700 font-medium mb-1") }}
 				{{ form.email(class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500") }}
+				{% for error in form.email.errors %}
+					<p class="text-sm text-red-600 mt-1">{{ error }}</p>
+				{% endfor %}
 			</div>
 
 			<div>
 				{{ form.password.label(class="block text-gray-700 font-medium mb-1") }}
 				{{ form.password(class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500") }}
+				{% for error in form.password.errors %}
+					<p class="text-sm text-red-600 mt-1">{{ error }}</p>
+				{% endfor %}
 			</div>
 
 			<div>
 				{{ form.roles.label(class="block text-gray-700 font-medium mb-1") }}
 				{{ form.roles(class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500", multiple=true) }}
+				{% for error in form.roles.errors %}
+					<p class="text-sm text-red-600 mt-1">{{ error }}</p>
+				{% endfor %}
 			</div>
 
 			<div>

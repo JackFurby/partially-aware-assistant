@@ -78,17 +78,21 @@ def create_user():
 	form.roles.choices = [(r.name, r.name) for r in Role.query.all()]
 
 	if form.validate_on_submit():
-		user = user_datastore.create_user(
-			email=form.email.data,
-			password=form.password.data,
-			confirmed_at=func.now()
-		)
-		for role_name in form.roles.data:
-			role = user_datastore.find_role(role_name)
-			if role:
-				user_datastore.add_role_to_user(user, role)
-		db.session.commit()
-		flash(f"User {form.email.data} created successfully!", "success")
-		return redirect(url_for('users.create_user'))
+		try:
+			user = user_datastore.create_user(
+				email=form.email.data,
+				password=form.password.data,
+				confirmed_at=func.now()
+			)
+			for role_name in form.roles.data:
+				role = user_datastore.find_role(role_name)
+				if role:
+					user_datastore.add_role_to_user(user, role)
+			db.session.commit()
+			flash(f"User {form.email.data} created successfully!", "success")
+			return redirect(url_for('users.create_user'))
+		except Exception as e:
+			db.session.rollback()
+			flash(f"An error occurred: {str(e)}", "danger")
 
 	return render_template('users/create_user.html', form=form)
