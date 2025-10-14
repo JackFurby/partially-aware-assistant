@@ -47,6 +47,10 @@ def create_app(config_class=Config):
 	from partially_aware_app.users import bp as users_bp
 	app.register_blueprint(users_bp)
 
+	# Setting pages
+	from partially_aware_app.settings import bp as settings_bp
+	app.register_blueprint(settings_bp)
+
 	# Normal app startup
 	if not app.debug and not app.testing:
 		pass

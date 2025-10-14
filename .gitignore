@@ -215,3 +215,6 @@ dist/
 build/
 *.tsbuildinfo
 .env
+
+# database
+app.db

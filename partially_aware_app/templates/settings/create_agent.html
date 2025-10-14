@@ -1,0 +1,37 @@
+{% extends "template_parts/base.html" %}
+{% block content %}
+<main class="flex-1 px-4 sm:px-6 lg:px-8 mt-4">
+	<div class="bg-white p-6 rounded shadow">
+		<div class="flex justify-between flex-wrap items-center pb-3">
+			<h1 class="text-2xl font-semibold text-gray-900">Create new agent</h1>
+		</div>
+		<hr class="my-4 border-gray-300"/>
+
+		<form method="POST" class="space-y-4">
+			{{ form.hidden_tag() }}
+
+			<div>
+				{{ form.name.label(class="block text-gray-700 font-medium mb-1") }}
+				{{ form.name(class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500") }}
+				{% for error in form.name.errors %}
+					<p class="text-sm text-red-600 mt-1">{{ error }}</p>
+				{% endfor %}
+			</div>
+
+			<div>
+				{{ form.url.label(class="block text-gray-700 font-medium mb-1") }}
+				{{ form.url(class="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500") }}
+				{% for error in form.url.errors %}
+					<p class="text-sm text-red-600 mt-1">{{ error }}</p>
+				{% endfor %}
+			</div>
+
+			<div>
+				<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+					{{ form.submit.label.text }}
+				</button>
+			</div>
+		</form>
+	</div>
+</main>
+{% endblock %}

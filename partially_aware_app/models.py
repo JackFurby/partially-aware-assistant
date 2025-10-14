@@ -48,8 +48,11 @@ class User(db.Model, UserMixin):
 	active = Column(Boolean())
 	fs_uniquifier = Column(String(255), unique=True, nullable=False)
 	confirmed_at = Column(DateTime())
-	roles = relationship('Role', secondary='roles_users',
-	                     backref=backref('users', lazy='dynamic'))
+	roles = relationship(
+		'Role',
+		secondary='roles_users',
+		backref=backref('users', lazy='dynamic')
+	)
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
 	update_datetime = Column(
 		DateTime(),
@@ -60,3 +63,45 @@ class User(db.Model, UserMixin):
 
 	def has_role(self, role):
 		return role in self.roles
+
+
+class UserSettings(db.Model):
+	__tablename__ = 'user_settings'
+	__table_args__ = (UniqueConstraint('user_id',),)
+	user_id = Column('user_id', Integer(), ForeignKey('user.id', ondelete='CASCADE'), primary_key=True)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=datetime.datetime.utcnow,
+	)
+
+
+class Agent(db.Model):
+	__tablename__ = 'agent'
+	id = Column(Integer, primary_key=True, autoincrement=True)
+	name = Column(String(255), unique=True, nullable=False)
+	user_id = Column(Integer, ForeignKey('user.id', name='agent_user_id'), nullable=False)
+	url = Column(String(255), unique=True, nullable=False)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=datetime.datetime.utcnow,
+	)
+
+
+class Model(db.Model):
+	__tablename__ = 'model'
+	__table_args__ = (UniqueConstraint('agent_id', 'model_name'),)
+	agent_id = Column('agent_id', Integer(), ForeignKey('agent.id', ondelete='CASCADE'), primary_key=True)
+	model_name = Column(String(255), nullable=False, primary_key=True)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=datetime.datetime.utcnow,
+	)

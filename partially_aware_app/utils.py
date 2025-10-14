@@ -3,19 +3,19 @@ from sqlalchemy.sql import func
 
 
 def seed(user_datastore, db):
-    """
-    Seed database with all roles and an admin user
-    """
-    roleAdmin = user_datastore.create_role(
-        name='admin',
-        description='Manage other users on the system')
-    roleStandard = user_datastore.create_role(
-        name='standard',
-        description='Manage the system')
-    userAdmin = user_datastore.create_user(
-        email='admin@admin.com',
-        password=hash_password('password'),
-        confirmed_at=func.now()
-    )
-    userAdmin.roles.append(roleAdmin)
-    db.session.commit()
+	"""
+	Seed database with all roles and an admin user
+	"""
+	roleAdmin = user_datastore.create_role(
+		name='admin',
+		description='Manage other users on the system')
+	roleStandard = user_datastore.create_role(
+		name='standard',
+		description='Manage the system')
+	userAdmin = user_datastore.create_user(
+		email='admin@admin.com',
+		password=hash_password('password'),
+		confirmed_at=func.now()
+	)
+	userAdmin.roles.append(roleAdmin)
+	db.session.commit()

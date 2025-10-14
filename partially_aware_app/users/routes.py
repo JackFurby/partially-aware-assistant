@@ -21,9 +21,6 @@ def user(id):
 		hasRoles = []
 		otherRoles = []
 		for role in roles:
-			# We manage verified role seperatly
-			if role.name == 'verified':
-				continue
 			if user.has_role(role.name):
 				hasRoles.append(role)
 			else:
