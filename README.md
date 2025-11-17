@@ -17,18 +17,6 @@ npx @tailwindcss/cli -i ./app/static/src/main.css -o ./app/static/src/output.css
 `Ctrl+b` then `d` to exit tmux
 `tmux attach -t tailwind` to reattach   
 
-
-```sh
-export FLASK_APP=partially-aware.py
-export FLASK_ENV=development
-```
-
-
-```sh
-flask --app app --debug run
-```
-
-
 ```sh
 flask db init
 flask db migrate -m "message here"

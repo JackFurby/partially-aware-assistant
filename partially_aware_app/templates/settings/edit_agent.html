@@ -22,6 +22,9 @@
 						<tr>
 							<td class="px-4 py-2 whitespace-nowrap">{{ model.model_name }}</td>
 							<td class="px-4 py-2 whitespace-nowrap">
+								<button data-agent="{{ model.agent_id }}" data-model="{{ model.model_name }}" class="pull-btn bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+									Pull Model
+								</button>
 							</td>
 						</tr>
 						{% endfor %}
@@ -48,6 +51,34 @@
 			</div>
 		</form>
 
+		<pre id="output" style="height:300px; overflow-y:auto; background:#111; color:#0f0; padding:10px;"></pre>
+
 	</div>
 </main>
+
+<script>
+	document.querySelectorAll(".pull-btn").forEach(btn => {
+		btn.addEventListener("click", () => {
+			const agentId = btn.dataset.agent;
+			const modelName = btn.dataset.model;
+			const output = document.getElementById("output");
+
+			output.textContent = `Starting pull: ${modelName}\n`;
+
+			const url = `/settings/stream_pull/${agentId}/${modelName}`;
+			const stream = new EventSource(url);
+
+			stream.onmessage = (e) => {
+				output.textContent += e.data + "\n";
+				output.scrollTop = output.scrollHeight;
+			};
+
+			stream.onerror = () => {
+				output.textContent += "\n[stream closed]\n";
+				stream.close();
+			};
+		});
+	});
+</script>
+
 {% endblock %}

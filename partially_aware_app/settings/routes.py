@@ -1,5 +1,6 @@
+import requests
 from flask import flash, request
-from flask import render_template, url_for, redirect
+from flask import render_template, url_for, redirect, Response, stream_with_context
 from partially_aware_app.models import UserSettings, Role, Agent, Model
 from partially_aware_app.settings import bp
 from partially_aware_app.settings.forms import CreateAgentForm, AddModelForm
@@ -79,7 +80,28 @@ def edit_agent(id):
 				flash(f"An error occurred: {str(e)}", "danger")
 
 		models = Model.query.filter_by(agent_id=id).all()
-		print(models)
-		print(Model.query.filter_by(agent_id=id).count())
 
 	return render_template('settings/edit_agent.html', form=form, models=models)
+
+
+# download model and stream the download progress
+@bp.route('/settings/stream_pull/<agent_id>/<model_name>')
+@auth_required("token", "session")
+@roles_required('admin')
+def stream_pull(agent_id, model_name):
+	def generate():
+		# Check to make sure an agent exists with the requested id
+		if Model.query.filter_by(model_name=model_name).count() == 0:
+			flash(f"Model with id {id} not found", "danger")
+			return redirect(url_for('settings.settings'))
+		else:
+			model = Model.query.filter_by(model_name=model_name).first()
+			agent = Agent.query.filter_by(id=model.agent_id).first()
+			with requests.post(f"{agent.url}/api/pull", json={"model": model_name}, stream=True) as r:
+				r.raise_for_status()
+				for line in r.iter_lines(decode_unicode=True):
+					if not line:
+						continue
+					yield f"data: {line}\n\n"
+
+	return Response(stream_with_context(generate()), mimetype="text/event-stream")
