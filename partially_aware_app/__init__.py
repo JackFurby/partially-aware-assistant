@@ -39,7 +39,7 @@ def create_app(config_class=Config):
 	from partially_aware_app.dashboard import bp as dashboard_bp
 	app.register_blueprint(dashboard_bp)
 
-	# Error pages and functions
+	# Error pages
 	from partially_aware_app.errors import bp as errors_bp
 	app.register_blueprint(errors_bp)
 
@@ -50,6 +50,10 @@ def create_app(config_class=Config):
 	# Setting pages
 	from partially_aware_app.settings import bp as settings_bp
 	app.register_blueprint(settings_bp)
+
+	# AI agent pages
+	from partially_aware_app.agent import bp as agent_bp
+	app.register_blueprint(agent_bp)
 
 	# Normal app startup
 	if not app.debug and not app.testing:
