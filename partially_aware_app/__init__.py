@@ -6,6 +6,8 @@ from flask_security import Security, SQLAlchemySessionUserDatastore
 from sassutils.wsgi import SassMiddleware
 from flask_mail import Mail
 from partially_aware_app.utils import seed as seed_db
+from itertools import groupby
+from datetime import date
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -54,6 +56,35 @@ def create_app(config_class=Config):
 	# AI agent pages
 	from partially_aware_app.agent import bp as agent_bp
 	app.register_blueprint(agent_bp)
+
+	from flask_login import current_user
+	from partially_aware_app.models import Chat
+
+	# Load clat history with every page load
+	@app.context_processor
+	def inject_sidebar_chats():
+		if not current_user.is_authenticated:
+			return dict(chats_grouped=[])
+
+		chats = (
+			Chat.query
+				.filter_by(user_id=current_user.id)
+				.order_by(Chat.create_datetime.desc())
+				.all()
+		)
+
+		# group by day
+		def day(chat):
+			return chat.create_datetime.date()
+
+		grouped = []
+		for day_value, items in groupby(chats, key=day):
+			grouped.append({
+				"date": day_value,
+				"chats": list(items)
+			})
+
+		return dict(chats_grouped=grouped, ChatSelectForm=partially_aware_app.forms.ChatSelectForm)
 
 	# Normal app startup
 	if not app.debug and not app.testing:

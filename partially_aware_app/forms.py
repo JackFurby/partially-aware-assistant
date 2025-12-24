@@ -1,4 +1,4 @@
-from wtforms import StringField
+from wtforms import StringField, HiddenField, SubmitField
 from wtforms.validators import DataRequired
 from flask_security import RegisterForm, LoginForm, ForgotPasswordForm
 from flask_security.utils import get_message, hash_password
@@ -6,6 +6,7 @@ from flask_security.confirmable import requires_confirmation
 from flask import flash
 from werkzeug.local import LocalProxy
 from flask import current_app
+from flask_wtf import FlaskForm
 
 
 _security = LocalProxy(lambda: current_app.extensions["security"])
@@ -51,3 +52,8 @@ class ExtendedLoginForm(LoginForm):
 			return False
 
 		return True
+
+
+class ChatSelectForm(FlaskForm):
+	chat_id = HiddenField()
+	submit = SubmitField("Select")

@@ -2,7 +2,7 @@ from partially_aware_app import db
 from flask_security import UserMixin, RoleMixin
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, UnicodeText, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, UnicodeText, UniqueConstraint, Text
 from sqlalchemy.sql import func
 import datetime
 
@@ -17,7 +17,7 @@ class RolesUsers(db.Model):
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
 
 
@@ -31,7 +31,7 @@ class Role(db.Model, RoleMixin):
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
 
 
@@ -53,12 +53,13 @@ class User(db.Model, UserMixin):
 		secondary='roles_users',
 		backref=backref('users', lazy='dynamic')
 	)
+	chats = db.relationship("Chat", backref="user")
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
 	update_datetime = Column(
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
 
 	def has_role(self, role):
@@ -74,7 +75,7 @@ class UserSettings(db.Model):
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
 
 
@@ -89,7 +90,7 @@ class Agent(db.Model):
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
 
 
@@ -103,5 +104,36 @@ class Model(db.Model):
 		DateTime(),
 		nullable=False,
 		server_default=func.now(),
-		onupdate=datetime.datetime.utcnow,
+		onupdate=func.now(),
 	)
+
+
+class Chat(db.Model):
+	__tablename__ = 'chat'
+	id = Column(Integer(), primary_key=True)
+	user_id = Column('user_id', Integer(), ForeignKey('user.id', ondelete='CASCADE'), index=True)
+	name = Column(String(255), nullable=False)
+	messages = db.relationship("Message", backref="chat", cascade="all, delete-orphan")
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=func.now(),
+	)
+
+
+class Message(db.Model):
+	__tablename__ = 'message'
+	id = Column(Integer(), primary_key=True)
+	chat_id = Column('chat_id', Integer(), ForeignKey('chat.id', ondelete='CASCADE'), index=True)
+	message = Column(Text, nullable=False)
+	total_duration = Column(Integer(), nullable=True)
+	load_duration = Column(Integer(), nullable=True)
+	prompt_eval_count = Column(Integer(), nullable=True)
+	prompt_eval_duration = Column(Integer(), nullable=True)
+	eval_count = Column(Integer(), nullable=True)
+	eval_duration = Column(Integer(), nullable=True)
+	model = Column(String(255), nullable=True)
+	role = Column(String(255), nullable=False)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)

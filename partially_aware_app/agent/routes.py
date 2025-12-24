@@ -1,17 +1,40 @@
 import requests
 from flask import Flask, request, Response, flash, jsonify, session
-from flask import render_template, url_for, redirect
+from flask import render_template, url_for, redirect, abort
 from partially_aware_app.agent import bp
 from partially_aware_app import db
 from partially_aware_app.models import User
 from partially_aware_app.agent.forms import ChatForm
-from partially_aware_app.models import Agent, Model
+from partially_aware_app.models import Agent, Model, Chat, Message
 from flask_security import auth_required, hash_password, current_user, roles_required
 
 
-@bp.route('/chat')
+@bp.route('/chat', methods=["GET", "POST"])
 @auth_required("token", "session")
 def chat():
+
+	if request.method == "POST":
+		chat_id = request.form.get("chat_id")
+		chat = Chat.query.filter_by(id=chat_id).first()
+
+		# make sure the chat to load belongs to the current user
+		if chat.user_id != current_user.id:
+			abort(403)
+		else:
+			session["chat_id"] = chat_id
+
+		messages = Message.query.filter_by(chat_id=chat_id).all()
+
+		# add messages to session
+		messages_sorted = sorted(messages, key=lambda m: m.create_datetime)
+		session_key = "chat_history"
+		session[session_key] = [{"role": m.role, "content": m.message} for m in messages_sorted]
+
+		#print(session[session_key])
+
+	elif request.method == "GET":
+		messages_sorted = []
+
 	form = ChatForm()
 
 	agents = Agent.query.all()
@@ -21,10 +44,11 @@ def chat():
 	form.model_name.choices = []
 
 	# Clear chat session for new chat
-	session.pop("chat_history", None)
-	session.modified = True
+	if request.method == "GET":
+		session.pop("chat_history", None)
+		session.modified = True
 
-	return render_template('agent/chat.html', title='Chat', form=form)
+	return render_template('agent/chat.html', title='Chat', form=form, messages=messages_sorted)
 
 
 # return a json of models given an agent ID
@@ -59,9 +83,36 @@ def stream_pull():
 	if session_key not in session:
 		session[session_key] = []
 
+		# create DB entery to save chat
+		try:
+			chat = Chat(
+				name="New chat",
+				user_id=current_user.id,
+			)
+			db.session.add(chat)
+			db.session.commit()
+
+			session["chat_id"] = chat.id
+		except Exception as e:
+			db.session.rollback()
+			flash(f"An error occurred: {str(e)}", "danger")
+
 	# Append user message
 	session[session_key].append({"role": "user", "content": message})
 	session.modified = True
+
+	# save message to chat history
+	try:
+		message = Message(
+			chat_id=session["chat_id"],
+			message=message,
+			role="user",
+		)
+		db.session.add(message)
+		db.session.commit()
+	except Exception as e:
+		db.session.rollback()
+		flash(f"An error occurred 1: {str(e)}", "danger")
 
 	ollama_url = f"{agent.url}/api/chat"
 	payload = {
@@ -93,5 +144,18 @@ def save_message():
 
 	session[session_key].append({"role": "assistant", "content": agent_message})
 	session.modified = True
+
+	# save message to chat history
+	try:
+		message = Message(
+			chat_id=session["chat_id"],
+			message=agent_message,
+			role="assistant",
+		)
+		db.session.add(message)
+		db.session.commit()
+	except Exception as e:
+		db.session.rollback()
+		flash(f"An error occurred 2: {str(e)}", "danger")
 
 	return jsonify({"success": True})
