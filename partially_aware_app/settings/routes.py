@@ -27,32 +27,40 @@ def settings():
 			flash(f"An error occurred: {str(e)}", "danger")
 
 	agents = Agent.query.all()
+	active_tab = 'profile'
 
-	return render_template('settings/settings.html', title='Settings', agents=agents)
+	agent_form = CreateAgentForm()
+
+	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, active_tab=active_tab)
 
 
-@bp.route('/settings/create_agent', methods=['GET', 'POST'])
+@bp.route('/settings/create_agent', methods=['POST'])
 @auth_required("token", "session")
 @roles_required('admin')
 def create_agent():
-	form = CreateAgentForm()
+	agent_form = CreateAgentForm()
+	agents = Agent.query.all()
+	active_tab = 'agent'  # matches your tab id
 
-	if form.validate_on_submit():
+	if agent_form.validate_on_submit():
 		try:
 			agent = Agent(
-				name=form.name.data,
-				url=form.url.data,
+				name=agent_form.name.data,
+				url=agent_form.url.data,
 				user_id=current_user.id,
 			)
 			db.session.add(agent)
 			db.session.commit()
-			flash(f"Agent {form.name.data} created successfully!", "success")
+			flash(f"Agent {agent_form.name.data} created successfully!", "success")
+
 			return redirect(url_for('settings.settings'))
 		except Exception as e:
 			db.session.rollback()
 			flash(f"An error occurred: {str(e)}", "danger")
 
-	return render_template('settings/create_agent.html', form=form)
+	# if validation fails or exception occurs, render template with errors
+	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, active_tab=active_tab)
+
 
 @bp.route('/settings/edit_agent/<id>', methods=['GET', 'POST'])
 @auth_required("token", "session")

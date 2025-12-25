@@ -11,18 +11,28 @@
 		<div class="mb-4 border-b border-gray-200 border-gray-700">
 			<ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-tab" data-tabs-toggle="#default-tab-content" role="tablist">
 				<li class="me-2" role="presentation">
-					<button class="inline-block p-4 border-b-2 rounded-t-lg" id="profile-tab" data-tabs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Profile</button>
+					<button
+						class="inline-block p-4 border-b-2 rounded-t-lg {% if active_tab == 'profile' %}border-blue-500 text-blue-600{% else %}hover:text-gray-600{% endif %}"
+						id="profile-tab" data-tabs-target="#profile" type="button" role="tab"
+						aria-controls="profile" aria-selected="{{ 'true' if active_tab == 'profile' else 'false' }}">
+						Profile
+					</button>
 				</li>
 				<li class="me-2" role="presentation">
-					<button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 hover:text-gray-300" id="dashboard-tab" data-tabs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="false">Agent</button>
+					<button
+						class="inline-block p-4 border-b-2 rounded-t-lg {% if active_tab == 'agent' %}border-blue-500 text-blue-600{% else %}hover:text-gray-600{% endif %}"
+						id="agent-tab" data-tabs-target="#agent" type="button" role="tab"
+						aria-controls="profile" aria-selected="{{ 'true' if active_tab == 'agent' else 'false' }}">
+						Agent
+					</button>
 				</li>
 			</ul>
 		</div>
 		<div id="default-tab-content">
-			<div class="hidden p-4 rounded-lg bg-gray-50 bg-gray-800" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+			<div class="{% if active_tab == 'profile' %}block{% else %}hidden{% endif %} p-4 rounded-lg bg-gray-50 bg-gray-800" id="profile" role="tabpanel" aria-labelledby="profile-tab">
 				<p class="text-sm text-gray-500 text-gray-400">This is some placeholder content the <strong class="font-medium text-gray-800 text-white">Profile tab's associated content</strong>. Clicking another tab will toggle the visibility of this one for the next. The tab JavaScript swaps classes to control the content visibility and styling.</p>
 			</div>
-			<div class="hidden p-4 rounded-lg bg-gray-50 bg-gray-800" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+			<div class="{% if active_tab == 'agent' %}block{% else %}hidden{% endif %} p-4 rounded-lg bg-gray-50 bg-gray-800" id="agent" role="tabpanel" aria-labelledby="agent-tab">
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead class="bg-gray-50">
@@ -49,9 +59,46 @@
 						</tbody>
 					</table>
 
-					<div class="mt-4">
-						<a href="{{ url_for('settings.create_agent') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add agent</a>
-					</div>
+					<form method="POST" class="w-full" action="{{ url_for('settings.create_agent') }}" }}>
+						{{ agent_form.hidden_tag() }}
+
+						<div class="flex items-center py-2 gap-4 w-full border-b border-gray-500">
+							<div class="flex-1 flex flex-col">
+								{{ agent_form.name(
+									class="appearance-none bg-transparent border-none
+										text-gray-200 placeholder-gray-400 py-1 px-2 leading-tight
+										focus:outline-none focus:text-white",
+									placeholder="Name"
+								) }}
+								<p class="text-red-600 text-sm h-5 mt-1">
+									{% for error in agent_form.name.errors %}
+										{{ error }}
+									{% endfor %}
+								</p>
+							</div>
+
+							<div class="flex-1 flex flex-col">
+								{{ agent_form.url(
+									class="appearance-none bg-transparent border-none
+										text-gray-200 placeholder-gray-400 py-1 px-2 leading-tight
+										focus:outline-none focus:text-white",
+									placeholder="URL"
+								) }}
+								<p class="text-red-600 text-sm h-5 mt-1">
+									{% for error in agent_form.url.errors %}
+										{{ error }}
+									{% endfor %}
+								</p>
+							</div>
+
+							<button
+								type="submit"
+								class="flex-shrink-0 whitespace-nowrap inline-flex items-center
+									px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+								{{ agent_form.submit.label.text }}
+							</button>
+						</div>
+					</form>
 
 				</div>
 			</div>
