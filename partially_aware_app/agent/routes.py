@@ -25,15 +25,16 @@ def chat():
 
 		messages = Message.query.filter_by(chat_id=chat_id).all()
 
+		agent_model = [chat.agent_id, chat.model_name]
+
 		# add messages to session
 		messages_sorted = sorted(messages, key=lambda m: m.create_datetime)
 		session_key = "chat_history"
 		session[session_key] = [{"role": m.role, "content": m.message} for m in messages_sorted]
 
-		#print(session[session_key])
-
 	elif request.method == "GET":
 		messages_sorted = []
+		agent_model = [None, None]
 
 	form = ChatForm()
 
@@ -48,7 +49,7 @@ def chat():
 		session.pop("chat_history", None)
 		session.modified = True
 
-	return render_template('agent/chat.html', title='Chat', form=form, messages=messages_sorted)
+	return render_template('agent/chat.html', title='Chat', form=form, messages=messages_sorted, agent_model=agent_model)
 
 
 # return a json of models given an agent ID
@@ -109,6 +110,17 @@ def stream_pull():
 			role="user",
 		)
 		db.session.add(message)
+		db.session.commit()
+	except Exception as e:
+		db.session.rollback()
+		flash(f"An error occurred 1: {str(e)}", "danger")
+
+	# Update chat with agent and model details
+	try:
+		chat = Chat.query.get(session["chat_id"])
+		chat.agent_id = agent.id
+		chat.model_name = model.model_name
+
 		db.session.commit()
 	except Exception as e:
 		db.session.rollback()

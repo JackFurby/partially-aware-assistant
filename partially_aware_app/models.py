@@ -2,7 +2,7 @@ from partially_aware_app import db
 from flask_security import UserMixin, RoleMixin
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, UnicodeText, UniqueConstraint, Text
+from sqlalchemy import Boolean, DateTime, Column, Integer, String, ForeignKey, UnicodeText, UniqueConstraint, Text, ForeignKeyConstraint
 from sqlalchemy.sql import func
 import datetime
 
@@ -96,7 +96,7 @@ class Agent(db.Model):
 
 class Model(db.Model):
 	__tablename__ = 'model'
-	__table_args__ = (UniqueConstraint('agent_id', 'model_name'),)
+	__table_args__ = (UniqueConstraint('agent_id', 'model_name', name='uq_model_agent_id_model_name'),)
 	agent_id = Column('agent_id', Integer(), ForeignKey('agent.id', ondelete='CASCADE'), primary_key=True)
 	model_name = Column(String(255), nullable=False, primary_key=True)
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
@@ -110,10 +110,20 @@ class Model(db.Model):
 
 class Chat(db.Model):
 	__tablename__ = 'chat'
+	__table_args__ = (  # ForeignKeyConstraint for model_name to Models table
+		ForeignKeyConstraint(
+			['agent_id', 'model_name'],
+			['model.agent_id', 'model.model_name'],
+			name="fk_chat_model_agent_model",
+			ondelete="CASCADE"
+		),
+	)
 	id = Column(Integer(), primary_key=True)
 	user_id = Column('user_id', Integer(), ForeignKey('user.id', ondelete='CASCADE'), index=True)
 	name = Column(String(255), nullable=False)
 	messages = db.relationship("Message", backref="chat", cascade="all, delete-orphan")
+	agent_id = Column('agent_id', Integer(), ForeignKey('agent.id', ondelete='CASCADE'), nullable=True)
+	model_name = Column(String(255), nullable=True)
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)
 	update_datetime = Column(
 		DateTime(),

@@ -5,7 +5,6 @@
 	<div class="bg-white p-6 rounded shadow">
 		<div class="flex justify-between flex-wrap items-center pb-3">
 			<h1 class="text-2xl font-semibold text-gray-900">Chat</h1>
-			<a href="{{ url_for('agent.chat') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">New Chat</a>
 		</div>
 		<hr class="my-4 border-gray-300"/>
 
@@ -64,124 +63,163 @@
 </main>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const agentSelect = document.getElementById("agent");
-    const modelSelect = document.getElementById("model");
-    const chatForm = document.getElementById("chat-form");
-    const chatWindow = document.getElementById("chat-window");
+	document.addEventListener("DOMContentLoaded", function () {
+		const agentSelect = document.getElementById("agent");
+		const modelSelect = document.getElementById("model");
+		const chatForm = document.getElementById("chat-form");
+		const chatWindow = document.getElementById("chat-window");
 
-    // Populate models when agent changes
-    agentSelect.addEventListener("change", function () {
-        const agentId = this.value;
-        fetch(`/chat/models/${agentId}`)
-            .then(response => response.json())
-            .then(data => {
-                modelSelect.innerHTML = "";
-                const placeholder = document.createElement("option");
-                placeholder.text = "Select a model";
-                placeholder.disabled = true;
-                placeholder.selected = true;
-                modelSelect.appendChild(placeholder);
+		// Get initial agent id and model_name
+		// Flask passes: [agent_id, model_name] or [null, null]
+		const agentModel = {{ agent_model | tojson }};
+		const [initialAgentId, initialModelName] = agentModel || [];
 
-                data.forEach(name => {
-                    const option = document.createElement("option");
-                    option.value = name;
-                    option.text = name;
-                    modelSelect.appendChild(option);
-                });
-            });
-    });
+		console.log([initialAgentId, initialModelName]);
+
+		window.initialModelName = initialModelName;
+
+		// Ensure agent has a placeholder option
+		let agentPlaceholder = agentSelect.querySelector("option[data-placeholder]");
+		if (!agentPlaceholder) {
+			const opt = document.createElement("option");
+			opt.text = "Select an agent";
+			opt.disabled = true;
+			opt.selected = true;
+			opt.setAttribute("data-placeholder", "true");
+			agentSelect.prepend(opt);
+			agentPlaceholder = opt;
+		}
+
+
+		// Populate models when agent changes
+		agentSelect.addEventListener("change", function () {
+			const agentId = this.value;
+			console.log(agentId);
+			fetch(`/chat/models/${agentId}`)
+				.then(response => response.json())
+				.then(data => {
+					modelSelect.innerHTML = "";
+
+					const placeholder = document.createElement("option");
+					placeholder.text = "Select a model";
+					placeholder.disabled = true;
+					placeholder.selected = true;
+					modelSelect.appendChild(placeholder);
+
+					data.forEach(name => {
+						const option = document.createElement("option");
+						option.value = name;
+						option.text = name;
+						modelSelect.appendChild(option);
+					});
+
+					// Set pre-selected model if present
+					if (window.initialModelName) {
+						modelSelect.value = window.initialModelName;
+					} else {
+						placeholder.selected = true;
+					}
+				});
+		});
+
+		if (initialAgentId) {
+			agentSelect.value = String(initialAgentId);
+
+			console.log(agentSelect.value);
+
+			agentSelect.dispatchEvent(new Event("change"));
+		} else {
+			agentPlaceholder.selected = true; // Show placeholder text if no agent selected
+		}
 
 		chatForm.addEventListener("submit", async function(e) {
-    e.preventDefault();
+			e.preventDefault();
 
-    const formData = new FormData(chatForm);
-    const message = formData.get("message");
-    const agentId = formData.get("agent_id");
-    const modelName = formData.get("model_name");
+			const formData = new FormData(chatForm);
+			const message = formData.get("message");
+			const agentId = formData.get("agent_id");
+			const modelName = formData.get("model_name");
 
-    if (!message || !agentId || !modelName) return;
+			if (!message || !agentId || !modelName) return;
 
-    // Append user message to chat window
-    const userMsg = document.createElement("div");
-    userMsg.className = "flex justify-end";
-    userMsg.innerHTML = `<div class="bg-blue-600 text-white p-2 rounded-lg max-w-xs break-words">${message}</div>`;
-    chatWindow.appendChild(userMsg);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
+			// Append user message to chat window
+			const userMsg = document.createElement("div");
+			userMsg.className = "flex justify-end";
+			userMsg.innerHTML = `<div class="bg-blue-600 text-white p-2 rounded-lg max-w-xs break-words">${message}</div>`;
+			chatWindow.appendChild(userMsg);
+			chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    // Prepare agent message container
-    const agentMsg = document.createElement("div");
-    agentMsg.className = "flex justify-start";
-    const bubble = document.createElement("div");
-    bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-xs break-words cursor-pointer";
-    agentMsg.appendChild(bubble);
-    chatWindow.appendChild(agentMsg);
+			// Prepare agent message container
+			const agentMsg = document.createElement("div");
+			agentMsg.className = "flex justify-start";
+			const bubble = document.createElement("div");
+			bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-xs break-words cursor-pointer";
+			agentMsg.appendChild(bubble);
+			chatWindow.appendChild(agentMsg);
 
-    let metadata = [];
-    let buffer = "";
+			let metadata = [];
+			let buffer = "";
 
-    // Streaming fetch
-    const response = await fetch("/chat/send_message", { method: "POST", body: formData });
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+			// Streaming fetch
+			const response = await fetch("/chat/send_message", { method: "POST", body: formData });
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+				buffer += decoder.decode(value, { stream: true });
 
-        // Split by newline (NDJSON) for safe JSON parsing
-        const lines = buffer.split("\n");
-        buffer = lines.pop(); // last incomplete line
+				// Split by newline (NDJSON) for safe JSON parsing
+				const lines = buffer.split("\n");
+				buffer = lines.pop(); // last incomplete line
 
-        for (let line of lines) {
-            if (!line.trim()) continue;
-            try {
-                const obj = JSON.parse(line);
-                if (obj.message && obj.message.content) {
-                    bubble.textContent += obj.message.content;
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-                }
-                metadata.push(obj);
-            } catch (err) {
-                console.error("Failed to parse chunk:", line, err);
-            }
-        }
-    }
+				for (let line of lines) {
+					if (!line.trim()) continue;
+					try {
+						const obj = JSON.parse(line);
+						if (obj.message && obj.message.content) {
+							bubble.textContent += obj.message.content;
+							chatWindow.scrollTop = chatWindow.scrollHeight;
+						}
+						metadata.push(obj);
+					} catch (err) {
+						console.error("Failed to parse chunk:", line, err);
+					}
+				}
+			}
 
-    // Handle any remaining buffer
-    if (buffer.trim()) {
-        try {
-            const obj = JSON.parse(buffer);
-            if (obj.message && obj.message.content) {
-                bubble.textContent += obj.message.content;
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
-            metadata.push(obj);
-        } catch (err) {
-            metadata.push({ raw: buffer });
-        }
-    }
+			// Handle any remaining buffer
+			if (buffer.trim()) {
+				try {
+					const obj = JSON.parse(buffer);
+					if (obj.message && obj.message.content) {
+						bubble.textContent += obj.message.content;
+						chatWindow.scrollTop = chatWindow.scrollHeight;
+					}
+					metadata.push(obj);
+				} catch (err) {
+					metadata.push({ raw: buffer });
+				}
+			}
 
-    // Attach click handler for metadata display
-    bubble.addEventListener("click", () => {
-        alert("Message metadata:\n" + JSON.stringify(metadata, null, 2));
-    });
+			// Attach click handler for metadata display
+			bubble.addEventListener("click", () => {
+				alert("Message metadata:\n" + JSON.stringify(metadata, null, 2));
+			});
 
-    // Save assistant message to session via a separate POST request
-    await fetch("/chat/save_message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: bubble.textContent })
-    });
+			// Save assistant message to session via a separate POST request
+			await fetch("/chat/save_message", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ message: bubble.textContent })
+			});
 
-    // Clear input field
-    chatForm.message.value = "";
-});
-
-
-});
+			// Clear input field
+			chatForm.message.value = "";
+		});
+	});
 </script>
 
 {% endblock %}
