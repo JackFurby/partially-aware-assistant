@@ -54,6 +54,7 @@ class User(db.Model, UserMixin):
 		backref=backref('users', lazy='dynamic')
 	)
 	chats = db.relationship("Chat", backref="user")
+	knowledge_bases = db.relationship("KnowledgeBase", backref="user", cascade="all, delete-orphan")
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
 	update_datetime = Column(
 		DateTime(),
@@ -147,3 +148,23 @@ class Message(db.Model):
 	model = Column(String(255), nullable=True)
 	role = Column(String(255), nullable=False)
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)
+
+
+class KnowledgeBase(db.Model):
+	__tablename__ = 'knowledge_base'
+	id = Column(Integer(), primary_key=True)
+	user_id = Column('user_id', Integer(), ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+	name = Column(String(255), nullable=False)
+	document_filename = Column(String(255), nullable=False)
+	document_content = Column(Text, nullable=False)
+	chunk_size = Column(Integer(), default=500)
+	chunk_overlap = Column(Integer(), default=50)
+	agent_id = Column('agent_id', Integer(), ForeignKey('agent.id', ondelete='CASCADE'), nullable=True)
+	embedding_model = Column(String(255), nullable=True)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=func.now(),
+	)

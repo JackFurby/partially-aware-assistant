@@ -1,6 +1,14 @@
 # partially-aware-assistant
 A personal AI assistant with memory
 
+## AI Assistance Disclosure
+
+This project is developed with AI-powered coding assistants used as supplementary tools to enhance productivity. The maintainer designs, architects, and writes the code, using AI assistants (such as Claude and GitHub Copilot) for suggestions to code snippets and functions. All AI-generated suggestions are reviewed, tested, and modified as needed before being committed. The maintainer maintains full creative and technical control over the codebase and takes complete responsibility for all code.
+
+Note: The initial RAG feature implementation was generated with more extensive AI assistance and subsequently modified by the maintainer in order to explore AI code generation capabilities. This code still underwent review and testing before being committed.
+
+## Setup instructions
+
 ```sh
 conda create -n partially-aware-assistant python=3.11
 conda activate partially-aware-assistant
@@ -11,7 +19,7 @@ npm install tailwindcss @tailwindcss/cli
 Run tailwind watch in headless
 ```sh
 tmux new -s tailwind
-npx @tailwindcss/cli -i ./app/static/src/main.css -o ./app/static/src/output.css --watch
+npx @tailwindcss/cli -i ./partially_aware_app/static/src/main.css -o ./partially_aware_app/static/src/output.css --watch
 ```
 
 `Ctrl+b` then `d` to exit tmux
@@ -35,7 +43,7 @@ flask seed
 ```
 
 
-Deploying the application
+## Deploying the application
 
 It is assumed you have a server setup.
 

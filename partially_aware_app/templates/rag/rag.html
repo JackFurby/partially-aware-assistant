@@ -1,0 +1,339 @@
+{% extends "template_parts/base.html" %}
+
+{% block content %}
+<main class="flex-1 p-4 sm:p-6 lg:p-8 mt-4">
+	<div class="bg-white p-6 rounded shadow">
+		<div class="flex justify-between flex-wrap items-center pb-3">
+			<h1 class="text-2xl font-semibold text-gray-900">RAG Query</h1>
+		</div>
+		<hr class="my-4 border-gray-300"/>
+
+		<!-- Current Knowledge Base Info -->
+		{% if current_kb %}
+		<div class="mb-4 p-4 bg-blue-50 rounded border border-blue-200">
+			<div class="flex justify-between items-center">
+				<div>
+					<p class="font-semibold text-blue-900">Current Knowledge Base:</p>
+					<p class="text-blue-700">{{ current_kb.name }} ({{ current_kb.document_filename }})</p>
+					<p class="text-sm text-blue-600 mt-1">Embedding Model: {{ current_kb.embedding_model }}</p>
+				</div>
+				<form method="post" action="{{ url_for('rag.delete', kb_id=current_kb.id) }}" onsubmit="return confirm('Are you sure you want to delete this knowledge base?');">
+					{{ upload_form.hidden_tag() }}
+					<button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"">
+						Delete
+					</button>
+				</form>
+			</div>
+		</div>
+		{% endif %}
+
+		<!-- Upload New Knowledge Base -->
+		<div class="mb-6">
+			<h2 class="text-xl font-semibold mb-3">Upload New Knowledge Base</h2>
+			<form method="post" action="{{ url_for('rag.upload') }}" enctype="multipart/form-data" class="space-y-4" id="upload-form">
+				{{ upload_form.hidden_tag() }}
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						{{ upload_form.name.label.text }}
+					</label>
+					{{ upload_form.name(class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+				</div>
+
+				<div class="flex gap-4">
+					<div class="flex-1">
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							{{ upload_form.agent_id.label.text }}
+						</label>
+						{{ upload_form.agent_id(id="upload-agent", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+					</div>
+
+					<div class="flex-1">
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							{{ upload_form.embedding_model.label.text }}
+						</label>
+						{{ upload_form.embedding_model(id="upload-embedding-model", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+					</div>
+				</div>
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						{{ upload_form.file.label.text }}
+					</label>
+					{{ upload_form.file(class_="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100") }}
+				</div>
+
+				{{ upload_form.submit(class_="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700") }}
+			</form>
+		</div>
+
+		<hr class="my-4 border-gray-300"/>
+
+		<!-- Load Existing Knowledge Base -->
+		{% if knowledge_bases %}
+		<div class="mb-6">
+			<h2 class="text-xl font-semibold mb-3">Load Existing Knowledge Base</h2>
+			<form method="post" action="{{ url_for('rag.rag') }}" class="flex gap-4 items-end">
+				{{ load_form.hidden_tag() }}
+				<input type="hidden" name="action" value="load">
+
+				<div class="flex-1">
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						{{ load_form.knowledge_base_id.label.text }}
+					</label>
+					{{ load_form.knowledge_base_id(id="load-kb", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+				</div>
+
+				{{ load_form.submit(class_="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700") }}
+			</form>
+		</div>
+
+		<hr class="my-4 border-gray-300"/>
+		{% endif %}
+
+		<!-- Query Interface (only show if Knowledge Base loaded) -->
+		{% if current_kb %}
+		<div>
+			<h2 class="text-xl font-semibold mb-3">Query Knowledge Base</h2>
+
+			<div id="response-window" class="flex-1 overflow-y-auto mb-4 p-4 space-y-2 border rounded bg-gray-50 min-h-[200px]">
+				<!-- Responses will appear here -->
+			</div>
+
+			<form id="query-form" class="space-y-6">
+				{{ query_form.hidden_tag() }}
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						{{ query_form.query.label.text }}
+					</label>
+					{{ query_form.query(rows="4", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+				</div>
+
+				<div class="flex flex-wrap items-end gap-4">
+					<div class="flex-1 min-w-[160px]">
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							{{ query_form.agent_id.label.text }}
+						</label>
+						{{ query_form.agent_id(id="agent", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+					</div>
+
+					<div class="flex-1 min-w-[160px]">
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							{{ query_form.model_name.label.text }}
+						</label>
+						{{ query_form.model_name(id="model", class_="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+					</div>
+
+					<div class="flex items-end">
+						{{ query_form.submit(class_="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700") }}
+					</div>
+				</div>
+			</form>
+		</div>
+		{% endif %}
+	</div>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+	// Upload form elements
+	const uploadAgentSelect = document.getElementById("upload-agent");
+	const uploadEmbeddingModelSelect = document.getElementById("upload-embedding-model");
+
+	// Load knowledge base form element
+	const loadKbSelect = document.getElementById("load-kb");
+
+	// Query form elements
+	const agentSelect = document.getElementById("agent");
+	const modelSelect = document.getElementById("model");
+	const queryForm = document.getElementById("query-form");
+	const responseWindow = document.getElementById("response-window");
+
+	// Add placeholder to load knowledge base dropdown
+	if (loadKbSelect) {
+		let loadKbPlaceholder = loadKbSelect.querySelector("option[data-placeholder]");
+		if (!loadKbPlaceholder) {
+			const opt = document.createElement("option");
+			opt.text = "Select knowledge base";
+			opt.value = "";
+			opt.disabled = true;
+			opt.selected = true;
+			opt.setAttribute("data-placeholder", "true");
+			loadKbSelect.prepend(opt);
+		}
+	}
+
+	// Handle upload form agent selection
+	if (uploadAgentSelect && uploadEmbeddingModelSelect) {
+		// Ensure upload agent has a placeholder option
+		let uploadAgentPlaceholder = uploadAgentSelect.querySelector("option[data-placeholder]");
+		if (!uploadAgentPlaceholder) {
+			const opt = document.createElement("option");
+			opt.text = "Select an agent";
+			opt.disabled = true;
+			opt.selected = true;
+			opt.setAttribute("data-placeholder", "true");
+			uploadAgentSelect.prepend(opt);
+		}
+
+		uploadAgentSelect.addEventListener("change", function () {
+			const agentId = this.value;
+			fetch(`/rag/models/${agentId}`)
+				.then(response => response.json())
+				.then(data => {
+					uploadEmbeddingModelSelect.innerHTML = "";
+
+					const placeholder = document.createElement("option");
+					placeholder.text = "Select an embedding model";
+					placeholder.disabled = true;
+					placeholder.selected = true;
+					uploadEmbeddingModelSelect.appendChild(placeholder);
+
+					data.forEach(name => {
+						const option = document.createElement("option");
+						option.value = name;
+						option.text = name;
+						// Highlight common embedding models
+						if (name.includes("embed") || name.includes("nomic") || name.includes("minilm") || name.includes("mxbai")) {
+							option.text = name + " (embedding)";
+						}
+						uploadEmbeddingModelSelect.appendChild(option);
+					});
+				});
+		});
+	}
+
+	if (!queryForm) return; // Knowledge Base not loaded yet
+
+	// Ensure agent has a placeholder option
+	let agentPlaceholder = agentSelect.querySelector("option[data-placeholder]");
+	if (!agentPlaceholder) {
+		const opt = document.createElement("option");
+		opt.text = "Select an agent";
+		opt.disabled = true;
+		opt.selected = true;
+		opt.setAttribute("data-placeholder", "true");
+		agentSelect.prepend(opt);
+	}
+
+	// Populate models when agent changes
+	agentSelect.addEventListener("change", function () {
+		const agentId = this.value;
+		fetch(`/rag/models/${agentId}`)
+			.then(response => response.json())
+			.then(data => {
+				modelSelect.innerHTML = "";
+
+				const placeholder = document.createElement("option");
+				placeholder.text = "Select a model";
+				placeholder.disabled = true;
+				placeholder.selected = true;
+				modelSelect.appendChild(placeholder);
+
+				data.forEach(name => {
+					const option = document.createElement("option");
+					option.value = name;
+					option.text = name;
+					modelSelect.appendChild(option);
+				});
+			});
+	});
+
+	queryForm.addEventListener("submit", async function(e) {
+		e.preventDefault();
+
+		const formData = new FormData(queryForm);
+		const query = formData.get("query");
+		const agentId = formData.get("agent_id");
+		const modelName = formData.get("model_name");
+
+		if (!query || !agentId || !modelName) {
+			alert("Please fill in all fields");
+			return;
+		}
+
+		// Append user query to response window
+		const userMsg = document.createElement("div");
+		userMsg.className = "flex justify-end";
+		userMsg.innerHTML = `<div class="bg-blue-600 text-white p-2 rounded-lg max-w-md break-words">${query}</div>`;
+		responseWindow.appendChild(userMsg);
+		responseWindow.scrollTop = responseWindow.scrollHeight;
+
+		// Prepare assistant message container
+		const assistantMsg = document.createElement("div");
+		assistantMsg.className = "flex justify-start";
+		const bubble = document.createElement("div");
+		bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-md break-words";
+		assistantMsg.appendChild(bubble);
+		responseWindow.appendChild(assistantMsg);
+
+		let buffer = "";
+
+		// Streaming fetch
+		try {
+			const response = await fetch("/rag/query", { method: "POST", body: formData });
+
+			// Check if response is not OK (error response)
+			if (!response.ok) {
+				const errorData = await response.json();
+				bubble.textContent = `Error: ${errorData.error || 'Unknown error occurred'}`;
+				bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+				return;
+			}
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+
+				buffer += decoder.decode(value, { stream: true });
+
+				// Split by newline (NDJSON)
+				const lines = buffer.split("\n");
+				buffer = lines.pop(); // last incomplete line
+
+				for (let line of lines) {
+					if (!line.trim()) continue;
+					try {
+						const obj = JSON.parse(line);
+						if (obj.error) {
+							bubble.textContent = `Error: ${obj.error}`;
+							bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+						} else if (obj.message && obj.message.content) {
+							bubble.textContent += obj.message.content;
+							responseWindow.scrollTop = responseWindow.scrollHeight;
+						}
+					} catch (err) {
+						console.error("Failed to parse chunk:", line, err);
+					}
+				}
+			}
+
+			// Handle remaining buffer
+			if (buffer.trim()) {
+				try {
+					const obj = JSON.parse(buffer);
+					if (obj.message && obj.message.content) {
+						bubble.textContent += obj.message.content;
+						responseWindow.scrollTop = responseWindow.scrollHeight;
+					}
+				} catch (err) {
+					console.error("Failed to parse final chunk:", buffer, err);
+				}
+			}
+		} catch (err) {
+			bubble.textContent = `Error: ${err.message}`;
+			bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+			console.error("Query error:", err);
+		}
+
+		// Clear input field
+		queryForm.query.value = "";
+	});
+});
+</script>
+
+{% endblock %}

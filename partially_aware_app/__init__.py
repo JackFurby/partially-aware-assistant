@@ -57,6 +57,10 @@ def create_app(config_class=Config):
 	from partially_aware_app.agent import bp as agent_bp
 	app.register_blueprint(agent_bp)
 
+	# RAG pages
+	from partially_aware_app.rag import bp as rag_bp
+	app.register_blueprint(rag_bp)
+
 	from flask_login import current_user
 	from partially_aware_app.models import Chat
 
