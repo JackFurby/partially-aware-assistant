@@ -195,14 +195,23 @@ def query():
 		"stream": True
 	}
 
-	def generate():
+	def generate(relevant_chunks):
 		try:
+
+			# send relevant_chunks to the front end
+			import json
+			relevant_chunks_json = json.dumps({
+				"type": "metadata",
+				"relevant_chunks": relevant_chunks
+			})
+			yield relevant_chunks_json + "\n"
+
 			with requests.post(ollama_url, json=payload, stream=True, timeout=60) as r:
 				if r.status_code != 200:
 					# Capture the error response from Ollama
 					error_text = r.text
-					import json
 					error_msg = f"Ollama returned {r.status_code}: {error_text}"
+					import json
 					error_response = json.dumps({"error": error_msg})
 					yield error_response + "\n"
 					return
@@ -216,7 +225,7 @@ def query():
 			error_response = json.dumps({"error": str(e)})
 			yield error_response + "\n"
 
-	return Response(generate(), mimetype="text/event-stream")
+	return Response(generate(relevant_chunks), mimetype="text/event-stream")
 
 
 @bp.route('/rag/delete/<int:kb_id>', methods=["POST"])

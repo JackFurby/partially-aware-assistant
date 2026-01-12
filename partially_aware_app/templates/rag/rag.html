@@ -288,12 +288,36 @@ document.addEventListener("DOMContentLoaded", function () {
 		responseWindow.scrollTop = responseWindow.scrollHeight;
 
 		// Prepare assistant message container
-		const assistantMsg = document.createElement("div");
-		assistantMsg.className = "flex justify-start";
-		const bubble = document.createElement("div");
-		bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-md break-words";
-		assistantMsg.appendChild(bubble);
-		responseWindow.appendChild(assistantMsg);
+	const assistantMsg = document.createElement("div");
+	assistantMsg.className = "flex flex-col items-start";
+
+	const bubble = document.createElement("div");
+	bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-md break-words";
+	assistantMsg.appendChild(bubble);
+
+	// Add "Show Sources" toggle
+	const showSourcesToggle = document.createElement("div");
+	showSourcesToggle.className = "text-xs text-blue-600 cursor-pointer mt-1 select-none";
+	showSourcesToggle.textContent = "Show Sources";
+	assistantMsg.appendChild(showSourcesToggle);
+
+	// Prepare chunks container (hidden by default)
+	const chunksContainer = document.createElement("div");
+	chunksContainer.className = "mt-2 text-xs text-gray-600 bg-gray-50 border rounded p-2 hidden";
+	assistantMsg.appendChild(chunksContainer);
+
+	responseWindow.appendChild(assistantMsg);
+
+	showSourcesToggle.addEventListener("click", () => {
+		const isHidden = chunksContainer.classList.contains("hidden");
+		if (isHidden) {
+			chunksContainer.classList.remove("hidden");
+			showSourcesToggle.textContent = "Hide Sources";
+		} else {
+			chunksContainer.classList.add("hidden");
+			showSourcesToggle.textContent = "Show Sources";
+		}
+	});
 
 		let buffer = "";
 
@@ -329,7 +353,23 @@ document.addEventListener("DOMContentLoaded", function () {
 						if (obj.error) {
 							bubble.textContent = `Error: ${obj.error}`;
 							bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
-						} else if (obj.message && obj.message.content) {
+						}
+
+						// RAG metadata (sent once, usually first)
+						else if (obj.type === "metadata" && obj.relevant_chunks) {
+							chunksContainer.innerHTML = `
+								<div class="font-semibold mb-1">Sources</div>
+								<div class="flex space-x-2 overflow-x-auto py-1 max-w-full">
+									${obj.relevant_chunks.map(chunk => `
+										<div class="flex-shrink-0 bg-white border rounded-lg p-2 shadow-sm max-w-xs break-words">
+											${chunk.text ?? chunk}
+										</div>
+									`).join('')}
+								</div>
+							`;
+						}
+
+						else if (obj.message && obj.message.content) {
 							bubble.textContent += obj.message.content;
 							responseWindow.scrollTop = responseWindow.scrollHeight;
 						}
