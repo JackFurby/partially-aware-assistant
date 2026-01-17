@@ -181,7 +181,8 @@ def query():
 
 		# Retrieve relevant chunks
 		relevant_chunks = service.retrieve(user_query, k=3)  # get k nearest chunks
-		augmented_prompt = service.augment_prompt(user_query, relevant_chunks)  # create a prompt to pass into the LLM
+		chunk_text = [i[0] for i in relevant_chunks]
+		augmented_prompt = service.augment_prompt(user_query, chunk_text)  # create a prompt to pass into the LLM
 	except requests.exceptions.RequestException as e:
 		return jsonify({"error": f"Failed to connect to Ollama agent: {str(e)}"}), 500
 	except Exception as e:
@@ -202,7 +203,8 @@ def query():
 			import json
 			relevant_chunks_json = json.dumps({
 				"type": "metadata",
-				"relevant_chunks": relevant_chunks
+				"relevant_chunks_text": [i[0] for i in relevant_chunks],
+				"relevant_chunks_distance": [str(i[1]) for i in relevant_chunks]
 			})
 			yield relevant_chunks_json + "\n"
 

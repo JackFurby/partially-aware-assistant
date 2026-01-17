@@ -356,13 +356,18 @@ document.addEventListener("DOMContentLoaded", function () {
 						}
 
 						// RAG metadata (sent once, usually first)
-						else if (obj.type === "metadata" && obj.relevant_chunks) {
+						else if (obj.type === "metadata" && obj.relevant_chunks_text) {
 							chunksContainer.innerHTML = `
 								<div class="font-semibold mb-1">Sources</div>
 								<div class="flex space-x-2 overflow-x-auto py-1 max-w-full">
-									${obj.relevant_chunks.map(chunk => `
+									${obj.relevant_chunks_text.map((chunk, i) => `
 										<div class="flex-shrink-0 bg-white border rounded-lg p-2 shadow-sm max-w-xs break-words">
-											${chunk.text ?? chunk}
+											<div>
+												${chunk.text ?? chunk}
+											</div>
+											<div class="text-xs text-gray-500 mt-1">
+												Distance: ${obj.relevant_chunks_distance[i]}
+											</div>
 										</div>
 									`).join('')}
 								</div>

@@ -81,7 +81,7 @@ class RAGService:
 		distances, indices = self.index.search(query_embedding, k)  # get nearest embedings to the query embedding
 
 		# Return chunks
-		return [self.chunks[i] for i in indices[0]]  # return chunks matching nearest embedings
+		return [(self.chunks[i[0]], i[1]) for i in zip(indices[0], distances[0])]  # return chunks matching nearest embedings
 
 	def augment_prompt(self, query: str, context_chunks: List[str]) -> str:
 		"""Create augmented prompt with context"""
