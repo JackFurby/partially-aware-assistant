@@ -22,8 +22,16 @@
 					<button
 						class="inline-block p-4 border-b-2 rounded-t-lg {% if active_tab == 'agent' %}border-blue-500 text-blue-600{% else %}hover:text-gray-600{% endif %}"
 						id="agent-tab" data-tabs-target="#agent" type="button" role="tab"
-						aria-controls="profile" aria-selected="{{ 'true' if active_tab == 'agent' else 'false' }}">
+						aria-controls="agent" aria-selected="{{ 'true' if active_tab == 'agent' else 'false' }}">
 						Agent
+					</button>
+				</li>
+				<li class="me-2" role="presentation">
+					<button
+						class="inline-block p-4 border-b-2 rounded-t-lg {% if active_tab == 'system' %}border-blue-500 text-blue-600{% else %}hover:text-gray-600{% endif %}"
+						id="system-tab" data-tabs-target="#system" type="button" role="tab"
+						aria-controls="system" aria-selected="{{ 'true' if active_tab == 'system' else 'false' }}">
+						System
 					</button>
 				</li>
 			</ul>
@@ -96,6 +104,43 @@
 								class="flex-shrink-0 whitespace-nowrap inline-flex items-center
 									px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
 								{{ agent_form.submit.label.text }}
+							</button>
+						</div>
+					</form>
+
+				</div>
+			</div>
+			<div class="{% if active_tab == 'system' %}block{% else %}hidden{% endif %} p-4 rounded-lg bg-gray-50 bg-gray-800" id="system" role="tabpanel" aria-labelledby="system-tab">
+				<div class="overflow-x-auto">
+
+					{% set rag_query_form = system_forms["SystemRAGQueryForm"] %}
+					<form method="POST" class="w-full" action="{{ url_for('settings.system_settings') }}" }}>
+						{{ rag_query_form.hidden_tag() }}
+
+						<div class="flex flex-col gap-1">
+							<label class="text-sm font-medium text-gray-300">
+								{{ rag_query_form.query_template.label.text }}
+							</label>
+
+							{{ rag_query_form.query_template(
+								class="w-full min-h-[120px] p-3 rounded bg-gray-800 text-white
+									border border-gray-600 focus:outline-none
+									focus:ring-2 focus:ring-blue-500"
+							) }}
+
+							{% if rag_query_form.query_template.errors %}
+								<p class="text-sm text-red-400">
+									{{ rag_query_form.query_template.errors[0] }}
+								</p>
+							{% endif %}
+						</div>
+
+						<div class="flex items-center py-2 gap-4 w-full border-b border-gray-500">
+							<button
+								type="submit"
+								class="flex-shrink-0 whitespace-nowrap inline-flex items-center
+									px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+								{{ rag_query_form.submit.label.text }}
 							</button>
 						</div>
 					</form>

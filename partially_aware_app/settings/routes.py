@@ -1,9 +1,10 @@
 import requests
 from flask import flash, request
 from flask import render_template, url_for, redirect, Response, stream_with_context
-from partially_aware_app.models import UserSettings, Role, Agent, Model
+from partially_aware_app.models import UserSettings, Role, Agent, Model, SystemSettings
 from partially_aware_app.settings import bp
-from partially_aware_app.settings.forms import CreateAgentForm, AddModelForm
+from partially_aware_app.settings.utils import get_system_settings
+from partially_aware_app.settings.forms import CreateAgentForm, AddModelForm, SystemRAGQueryForm
 from partially_aware_app import db
 from flask_security import auth_required, current_user, roles_required
 from sqlalchemy.sql import func
@@ -31,7 +32,16 @@ def settings():
 
 	agent_form = CreateAgentForm()
 
-	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, active_tab=active_tab)
+	system_settings = get_system_settings()
+
+	system_forms = {
+		"SystemRAGQueryForm": SystemRAGQueryForm(data = {
+			"query_template":system_settings.get("rag_prompt")
+		})
+	}
+
+
+	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, system_settings=system_settings, system_forms=system_forms, active_tab=active_tab)
 
 
 @bp.route('/settings/create_agent', methods=['POST'])
@@ -40,7 +50,13 @@ def settings():
 def create_agent():
 	agent_form = CreateAgentForm()
 	agents = Agent.query.all()
-	active_tab = 'agent'  # matches your tab id
+	active_tab = 'agent'
+	system_settings = get_system_settings()
+	system_forms = {
+		"SystemRAGQueryForm": SystemRAGQueryForm(data = {
+			"query_template":system_settings.get("rag_prompt")
+		})
+	}
 
 	if agent_form.validate_on_submit():
 		try:
@@ -59,7 +75,59 @@ def create_agent():
 			flash(f"An error occurred: {str(e)}", "danger")
 
 	# if validation fails or exception occurs, render template with errors
-	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, active_tab=active_tab)
+	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, system_settings=system_settings, system_forms=system_forms, active_tab=active_tab)
+
+
+@bp.route('/settings/system_settings', methods=['POST'])
+@auth_required("token", "session")
+@roles_required('admin')
+def system_settings():
+	agent_form = CreateAgentForm()
+	agents = Agent.query.all()
+	active_tab = 'system'
+	system_settings = get_system_settings()
+	system_forms = {
+		"SystemRAGQueryForm": SystemRAGQueryForm(data = {
+			"query_template":system_settings.get("rag_prompt")
+		})
+	}
+
+	# system RAG query form submitted
+	if system_forms["SystemRAGQueryForm"].validate_on_submit():
+		try:
+			# set all rag_prompt settings to False
+			SystemSettings.query.filter(
+				SystemSettings.setting_name == "rag_prompt",
+				SystemSettings.active.is_(True)
+			).update({"active": False}, synchronize_session=False)
+
+			rag_prompt = SystemSettings(
+				user_id=current_user.id,
+				setting_name="rag_prompt",
+				setting_value=system_forms["SystemRAGQueryForm"].query_template.data,
+				active=True
+			)
+
+			db.session.add(rag_prompt)
+			db.session.commit()
+			flash(f"System RAG prompt updated successfully!", "success")
+
+			return redirect(url_for('settings.settings'))
+
+		except Exception as e:
+			db.session.rollback()
+			flash(f"An error occurred: {str(e)}", "danger")
+
+	# Get the latest system settings
+	system_settings = get_system_settings()
+	system_forms = {
+		"SystemRAGQueryForm": SystemRAGQueryForm(data = {
+			"query_template":system_settings.get("rag_prompt")
+		})
+	}
+
+	# if validation fails or exception occurs, render template with errors
+	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, system_settings=system_settings, system_forms=system_forms, active_tab=active_tab)
 
 
 @bp.route('/settings/edit_agent/<id>', methods=['GET', 'POST'])

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, ValidationError
 from flask_security import SQLAlchemyUserDatastore
 from partially_aware_app import db
@@ -23,3 +23,8 @@ class CreateAgentForm(FlaskForm):
 class AddModelForm(FlaskForm):
 	name = StringField('Name', validators=[DataRequired()])
 	submit = SubmitField('Add Model')
+
+
+class SystemRAGQueryForm(FlaskForm):
+	query_template = TextAreaField("Query Template (must include '[context]' and '[query]')", validators=[DataRequired()])
+	submit = SubmitField('Update')

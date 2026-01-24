@@ -80,6 +80,22 @@ class UserSettings(db.Model):
 	)
 
 
+class SystemSettings(db.Model):
+	__tablename__ = 'system_settings'
+	id = Column(Integer, primary_key=True)
+	user_id = Column('user_id', Integer(), ForeignKey('user.id'), nullable=False)
+	setting_name = Column(String(255), nullable=False)
+	setting_value = Column(Text, nullable=False)
+	active = Column(Boolean(), nullable=False, default=True)
+	create_datetime = Column(DateTime(), nullable=False, server_default=func.now())
+	update_datetime = Column(
+		DateTime(),
+		nullable=False,
+		server_default=func.now(),
+		onupdate=func.now(),
+	)
+
+
 class Agent(db.Model):
 	__tablename__ = 'agent'
 	id = Column(Integer, primary_key=True, autoincrement=True)
