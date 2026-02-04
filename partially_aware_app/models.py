@@ -124,6 +124,24 @@ class Model(db.Model):
 		onupdate=func.now(),
 	)
 
+	tags = db.relationship('ModelTag', back_populates='model', cascade='all, delete-orphan', passive_deletes=True)
+
+
+class ModelTag(db.Model):
+	__tablename__ = 'tag'
+	__table_args__ = ()
+
+	id = db.Column(db.Integer, primary_key=True)
+	agent_id = db.Column(db.Integer, nullable=False)
+	model_name = db.Column(db.String(255), nullable=False)
+	name = db.Column(db.String(50), nullable=False)
+	model = db.relationship('Model', back_populates='tags')
+
+	__table_args__ = (
+		db.UniqueConstraint('agent_id', 'model_name', 'name', name='uq_tag_model_name'),
+		db.ForeignKeyConstraint(['agent_id', 'model_name'], ['model.agent_id', 'model.model_name'], ondelete='CASCADE'),
+	)
+
 
 class Chat(db.Model):
 	__tablename__ = 'chat'

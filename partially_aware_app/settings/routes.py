@@ -1,10 +1,10 @@
 import requests
 from flask import flash, request
 from flask import render_template, url_for, redirect, Response, stream_with_context
-from partially_aware_app.models import UserSettings, Role, Agent, Model, SystemSettings
+from partially_aware_app.models import UserSettings, Role, Agent, Model, SystemSettings, ModelTag
 from partially_aware_app.settings import bp
 from partially_aware_app.settings.utils import get_system_settings
-from partially_aware_app.settings.forms import CreateAgentForm, AddModelForm, SystemRAGQueryForm
+from partially_aware_app.settings.forms import CreateAgentForm, AddModelForm, SystemRAGQueryForm, ModelTagForm
 from partially_aware_app import db
 from flask_security import auth_required, current_user, roles_required
 from sqlalchemy.sql import func
@@ -39,7 +39,6 @@ def settings():
 			"query_template":system_settings.get("rag_prompt")
 		})
 	}
-
 
 	return render_template('settings/settings.html', title='Settings', agents=agents, agent_form=agent_form, system_settings=system_settings, system_forms=system_forms, active_tab=active_tab)
 
@@ -134,22 +133,23 @@ def system_settings():
 @auth_required("token", "session")
 @roles_required('admin')
 def edit_agent(id):
-	form = AddModelForm()
+	model_form = AddModelForm()
+	tag_form = ModelTagForm()
 
 	# Check to make sure an agent exists with the requested id
 	if Agent.query.filter_by(id=id).count() == 0:
 		flash(f"Agent with id {id} not found", "danger")
 		return redirect(url_for('settings.settings'))
 	else:
-		if form.validate_on_submit():
+		if model_form.validate_on_submit():
 			try:
 				model = Model(
-					model_name=form.name.data,
+					model_name=model_form.name.data,
 					agent_id=id,
 				)
 				db.session.add(model)
 				db.session.commit()
-				flash(f"Model {form.name.data} created successfully!", "success")
+				flash(f"Model {model_form.name.data} created successfully!", "success")
 				return redirect(url_for('settings.edit_agent', id=id))
 			except Exception as e:
 				db.session.rollback()
@@ -157,7 +157,47 @@ def edit_agent(id):
 
 		models = Model.query.filter_by(agent_id=id).all()
 
-	return render_template('settings/edit_agent.html', form=form, models=models)
+	return render_template('settings/edit_agent.html', model_form=model_form, tag_form=tag_form, models=models)
+
+
+@bp.route('/settings/add_model_tag/<id>', methods=['GET', 'POST'])
+@auth_required("token", "session")
+@roles_required('admin')
+def add_model_tag(id):
+	model_form = AddModelForm()
+	tag_form = ModelTagForm()
+
+	print(1)
+
+	# Check to make sure an agent exists with the requested id
+	if Agent.query.filter_by(id=id).count() == 0:
+		flash(f"Agent with id {id} not found", "danger")
+		return redirect(url_for('settings.settings'))
+	else:
+		print(2)
+		print(tag_form)
+		if tag_form.validate_on_submit():
+			print(3)
+			try:
+				model = Model.query.get(
+					(id, tag_form.model_name.data)
+				)
+				if model:
+					for tag_name in tag_form.tags.data:
+						if not any(t.name == tag_name for t in model.tags):
+							model.tags.append(ModelTag(name=tag_name))
+					db.session.commit()
+				return redirect(url_for('settings.edit_agent', id=id))
+
+			except Exception as e:
+				db.session.rollback()
+				flash(f"An error occurred: {str(e)}", "danger")
+		else:
+			print(tag_form.errors)
+
+		models = Model.query.filter_by(agent_id=id).all()
+
+	return render_template('settings/edit_agent.html', model_form=model_form, tag_form=tag_form, models=models)
 
 
 # download model and stream the download progress
