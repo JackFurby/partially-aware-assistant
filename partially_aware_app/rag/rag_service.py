@@ -2,6 +2,7 @@ import numpy as np
 import faiss
 import requests
 from typing import List
+from partially_aware_app.settings.utils import get_system_settings
 
 
 class RAGService:
@@ -87,11 +88,12 @@ class RAGService:
 		"""Create augmented prompt with context"""
 		context = "\n\n".join([f"Context {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks)])
 
-		augmented_prompt = f"""You are a helpful assistant. Use the following context to answer the user's question. If the context doesn't contain relevant information, say so.
+		# get RAG prompt
+		system_settings = get_system_settings()
+		rag_prompt = system_settings.get("rag_prompt")
 
-{context}
+		# Add context from knowledge base, and user query to prompt
+		augmented_prompt = rag_prompt.replace("[context]", context)
+		augmented_prompt = augmented_prompt.replace("[query]", query)
 
-User Question: {query}
-
-Answer:"""
 		return augmented_prompt

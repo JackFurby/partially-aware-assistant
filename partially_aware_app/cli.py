@@ -42,11 +42,11 @@ def register(app, user_datastore):
 		setting_name = 'rag_prompt'
 		setting_value = """You are a helpful assistant. Use the following context to answer the user's question. If the context doesn't contain relevant information, say so.
 
-		[context]
+[context]
 
-		User Question: [query]
+User Question: [query]
 
-		Answer:"""
+Answer:"""
 
 		rag_setting = SystemSettings.query.filter_by(
 			user_id=userAdmin.id,
