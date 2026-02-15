@@ -181,6 +181,7 @@ class Message(db.Model):
 	eval_duration = Column(Integer(), nullable=True)
 	model = Column(String(255), nullable=True)
 	role = Column(String(255), nullable=False)
+	model_reasoning = Column(Text)
 	create_datetime = Column(DateTime(), nullable=False, server_default=func.now(), index=True)
 
 

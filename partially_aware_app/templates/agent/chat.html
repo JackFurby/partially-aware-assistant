@@ -12,16 +12,29 @@
 		<div id="chat-window" class="flex-1 overflow-y-auto mb-4 p-4 space-y-2 border rounded bg-gray-50">
 			{% for m in messages %}
 				{% if m.role == "user" %}
-					<div class="flex justify-end">
+					<div class="flex flex-col items-end">
 						<div class="bg-blue-600 text-white p-2 rounded-lg max-w-xs break-words">
 							{{ m.message }}
 						</div>
 					</div>
 				{% elif m.role == "assistant" %}
-					<div class="flex justify-start">
+					<div class="flex flex-col items-start">
 						<div class="bg-gray-200 text-gray-900 p-2 rounded-lg max-w-xs break-words">
 							{{ m.message }}
 						</div>
+						{% if m.model_reasoning is not none %}
+							<div class="details-toggle text-xs text-blue-600 cursor-pointer mt-1 select-none">Show Details</div>
+							<div class="details-container mt-2 text-xs text-gray-600 bg-gray-50 border rounded p-2 hidden">
+								<div class="mt-2">
+									<div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 mt-2 max-w-full break-words">
+										<div class="font-semibold mb-1 text-yellow-800">
+											Reasoning
+										</div>
+										<div class="text-sm text-yellow-900 whitespace-pre-wrap">{{ m.model_reasoning }}</div>
+									</div>
+								</div>
+							</div>
+						{% endif%}
 					</div>
 				{% endif %}
 			{% endfor %}
@@ -74,8 +87,6 @@
 		const agentModel = {{ agent_model | tojson }};
 		const [initialAgentId, initialModelName] = agentModel || [];
 
-		console.log([initialAgentId, initialModelName]);
-
 		window.initialModelName = initialModelName;
 
 		// Ensure agent has a placeholder option
@@ -126,10 +137,25 @@
 				});
 		});
 
+		document.addEventListener("click", function (e) {
+			if (e.target.classList.contains("details-toggle")) {
+			    const toggle = e.target;
+			    const container = toggle.nextElementSibling;
+
+			    const isHidden = container.classList.contains("hidden");
+
+			    if (isHidden) {
+			        container.classList.remove("hidden");
+			        toggle.textContent = "Hide Details";
+			    } else {
+			        container.classList.add("hidden");
+			        toggle.textContent = "Show Details";
+			    }
+			}
+		});
+
 		if (initialAgentId) {
 			agentSelect.value = String(initialAgentId);
-
-			console.log(agentSelect.value);
 
 			agentSelect.dispatchEvent(new Event("change"));
 		} else {
@@ -178,14 +204,14 @@
 				const isHidden = chunksContainer.classList.contains("hidden");
 				if (isHidden) {
 					chunksContainer.classList.remove("hidden");
-					showSourcesToggle.textContent = "Hide Details";
+					showSourcesToggle.textContent = "Hide Sources";
 				} else {
 					chunksContainer.classList.add("hidden");
-					showSourcesToggle.textContent = "Show Details";
+					showSourcesToggle.textContent = "Show Sources";
 				}
 			});
 
-			// Create reasoning container (hidden by default
+			// Create reasoning container (hidden by default)
 			const reasoningContainer = document.createElement("div");
 			reasoningContainer.className = "mt-2";
 			chunksContainer.appendChild(reasoningContainer);
@@ -196,6 +222,8 @@
 			let reasoningBox = null;
 			let reasoningText = "";
 
+			let noErrors = true; // set this to false if any errors are thrown
+
 			// Streaming fetch
 			try {
 				const response = await fetch("/chat/send_message", { method: "POST", body: formData });
@@ -205,6 +233,7 @@
 					const errorData = await response.json();
 					bubble.textContent = `Error: ${errorData.error || 'Unknown error occurred'}`;
 					bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+					noErrors = false;
 					return;
 				}
 
@@ -228,6 +257,8 @@
 							if (obj.error) {
 								bubble.textContent = `Error: ${obj.error}`;
 								bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+								noErrors = false;
+								return;
 							}
 
 							if (obj.message && obj.message.thinking) {
@@ -262,24 +293,25 @@
 					}
 				}
 
-					// Handle any remaining buffer
-					if (buffer.trim()) {
-						try {
-							const obj = JSON.parse(buffer);
-							if (obj.message && obj.message.content) {
-								bubble.textContent += obj.message.content;
-								chatWindow.scrollTop = chatWindow.scrollHeight;
-							}
-							metadata.push(obj);
-						} catch (err) {
-							metadata.push({ raw: buffer });
+				// Handle any remaining buffer
+				if (buffer.trim()) {
+					try {
+						const obj = JSON.parse(buffer);
+						if (obj.message && obj.message.content) {
+							bubble.textContent += obj.message.content;
+							chatWindow.scrollTop = chatWindow.scrollHeight;
 						}
+						metadata.push(obj);
+					} catch (err) {
+						metadata.push({ raw: buffer });
 					}
-				} catch (err) {
-					bubble.textContent = `Error: ${err.message}`;
-					bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
-					console.error("Query error:", err);
 				}
+			} catch (err) {
+				bubble.textContent = `Error: ${err.message}`;
+				bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+				noErrors = false;
+				return;
+			}
 
 			// Attach click handler for metadata display
 			bubble.addEventListener("click", () => {
@@ -287,11 +319,13 @@
 			});
 
 			// Save assistant message to session via a separate POST request
-			await fetch("/chat/save_message", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ message: bubble.textContent })
-			});
+			if (noErrors) {  // Only save the message if no errors are thrown (do not save the error message)
+				await fetch("/chat/save_message", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ message: bubble.textContent, model_reasoning: reasoningText })
+				});
+			}
 
 			// Clear input field
 			chatForm.message.value = "";

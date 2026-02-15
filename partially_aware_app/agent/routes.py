@@ -162,6 +162,7 @@ def save_message():
 		message = Message(
 			chat_id=session["chat_id"],
 			message=agent_message,
+			model_reasoning=request.json.get("model_reasoning"),
 			role="assistant",
 		)
 		db.session.add(message)
