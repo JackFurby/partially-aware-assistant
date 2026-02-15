@@ -52,11 +52,11 @@ def chat():
 	return render_template('agent/chat.html', title='Chat', form=form, messages=messages_sorted, agent_model=agent_model)
 
 
-# return a json of models given an agent ID
+# return a json of models and model tags given an agent ID
 @bp.route("/chat/models/<int:agent_id>")
 def models(agent_id):
 	models = Model.query.filter_by(agent_id=agent_id).all()
-	return jsonify([(m.model_name) for m in models])
+	return jsonify([{"model_name": m.model_name, "tags": [t.name for t in m.tags]} for m in models])
 
 
 # route to send and recieve model messages

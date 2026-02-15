@@ -217,13 +217,14 @@ document.addEventListener("DOMContentLoaded", function () {
 					placeholder.selected = true;
 					uploadEmbeddingModelSelect.appendChild(placeholder);
 
-					data.forEach(name => {
+					data.forEach(model => {
 						const option = document.createElement("option");
-						option.value = name;
-						option.text = name;
-						// Highlight common embedding models
-						if (name.includes("embed") || name.includes("nomic") || name.includes("minilm") || name.includes("mxbai")) {
-							option.text = name + " (embedding)";
+						option.value = model["model_name"];
+						// add model name and tags to option
+						if (model.tags && model.tags.length > 0) {
+							option.text = `${model["model_name"]} (${model.tags.join(", ")})`;
+						} else {
+							option.text = model["model_name"];
 						}
 						uploadEmbeddingModelSelect.appendChild(option);
 					});

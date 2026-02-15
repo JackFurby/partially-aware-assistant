@@ -167,17 +167,13 @@ def add_model_tag(id):
 	model_form = AddModelForm()
 	tag_form = ModelTagForm()
 
-	print(1)
-
 	# Check to make sure an agent exists with the requested id
 	if Agent.query.filter_by(id=id).count() == 0:
 		flash(f"Agent with id {id} not found", "danger")
 		return redirect(url_for('settings.settings'))
 	else:
-		print(2)
 		print(tag_form)
 		if tag_form.validate_on_submit():
-			print(3)
 			try:
 				model = Model.query.get(
 					(id, tag_form.model_name.data)

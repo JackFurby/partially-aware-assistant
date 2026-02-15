@@ -130,11 +130,11 @@ def upload():
 	return redirect(url_for('rag.rag'))
 
 
+# return a json of models and model tags given an agent ID
 @bp.route('/rag/models/<int:agent_id>')
 def models(agent_id):
-	"""return a json of models given an agent ID"""
 	models = Model.query.filter_by(agent_id=agent_id).all()
-	return jsonify([m.model_name for m in models])
+	return jsonify([{"model_name": m.model_name, "tags": [t.name for t in m.tags]} for m in models])
 
 
 @bp.route('/rag/query', methods=["POST"])
