@@ -155,58 +155,131 @@
 
 			// Prepare agent message container
 			const agentMsg = document.createElement("div");
-			agentMsg.className = "flex justify-start";
+			agentMsg.className = "flex flex-col items-start";
+
 			const bubble = document.createElement("div");
 			bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-xs break-words cursor-pointer";
 			agentMsg.appendChild(bubble);
+
+			// Add "Show Sources" toggle
+			const showSourcesToggle = document.createElement("div");
+			showSourcesToggle.className = "text-xs text-blue-600 cursor-pointer mt-1 select-none";
+			showSourcesToggle.textContent = "Show Details";
+			agentMsg.appendChild(showSourcesToggle);
+
+			// Prepare chunks container (hidden by default)
+			const chunksContainer = document.createElement("div");
+			chunksContainer.className = "mt-2 text-xs text-gray-600 bg-gray-50 border rounded p-2 hidden";
+			agentMsg.appendChild(chunksContainer);
+
 			chatWindow.appendChild(agentMsg);
+
+			showSourcesToggle.addEventListener("click", () => {
+				const isHidden = chunksContainer.classList.contains("hidden");
+				if (isHidden) {
+					chunksContainer.classList.remove("hidden");
+					showSourcesToggle.textContent = "Hide Details";
+				} else {
+					chunksContainer.classList.add("hidden");
+					showSourcesToggle.textContent = "Show Details";
+				}
+			});
+
+			// Create reasoning container (hidden by default
+			const reasoningContainer = document.createElement("div");
+			reasoningContainer.className = "mt-2";
+			chunksContainer.appendChild(reasoningContainer);
 
 			let metadata = [];
 			let buffer = "";
 
+			let reasoningBox = null;
+			let reasoningText = "";
+
 			// Streaming fetch
-			const response = await fetch("/chat/send_message", { method: "POST", body: formData });
-			const reader = response.body.getReader();
-			const decoder = new TextDecoder();
+			try {
+				const response = await fetch("/chat/send_message", { method: "POST", body: formData });
 
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
+				// Check if response is not OK (error response)
+				if (!response.ok) {
+					const errorData = await response.json();
+					bubble.textContent = `Error: ${errorData.error || 'Unknown error occurred'}`;
+					bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+					return;
+				}
 
-				buffer += decoder.decode(value, { stream: true });
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
 
-				// Split by newline (NDJSON) for safe JSON parsing
-				const lines = buffer.split("\n");
-				buffer = lines.pop(); // last incomplete line
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
 
-				for (let line of lines) {
-					if (!line.trim()) continue;
-					try {
-						const obj = JSON.parse(line);
-						if (obj.message && obj.message.content) {
-							bubble.textContent += obj.message.content;
-							chatWindow.scrollTop = chatWindow.scrollHeight;
+					buffer += decoder.decode(value, { stream: true });
+
+					// Split by newline (NDJSON) for safe JSON parsing
+					const lines = buffer.split("\n");
+					buffer = lines.pop(); // last incomplete line
+
+					for (let line of lines) {
+						if (!line.trim()) continue;
+						try {
+							const obj = JSON.parse(line);
+							if (obj.error) {
+								bubble.textContent = `Error: ${obj.error}`;
+								bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+							}
+
+							if (obj.message && obj.message.thinking) {
+								reasoningText += obj.message.thinking;
+
+								// Create the reasoning box only once
+								if (!reasoningBox) {
+									reasoningBox = document.createElement("div");
+									reasoningBox.className = "bg-yellow-50 border border-yellow-300 rounded-lg p-3 mt-2 max-w-full break-words";
+
+									reasoningBox.innerHTML = `
+									<div class="font-semibold mb-1 text-yellow-800">
+										Reasoning
+									</div>
+									<div class="text-sm text-yellow-900 whitespace-pre-wrap"></div>
+									`;
+
+									reasoningContainer.appendChild(reasoningBox);
+								}
+
+								// Update text inside box
+								const contentDiv = reasoningBox.querySelector("div:last-child");
+								contentDiv.textContent = reasoningText;
+							} else if (obj.message && obj.message.content) {
+								bubble.textContent += obj.message.content;
+								chatWindow.scrollTop = chatWindow.scrollHeight;
+							}
+							metadata.push(obj);
+						} catch (err) {
+							console.error("Failed to parse chunk:", line, err);
 						}
-						metadata.push(obj);
-					} catch (err) {
-						console.error("Failed to parse chunk:", line, err);
 					}
 				}
-			}
 
-			// Handle any remaining buffer
-			if (buffer.trim()) {
-				try {
-					const obj = JSON.parse(buffer);
-					if (obj.message && obj.message.content) {
-						bubble.textContent += obj.message.content;
-						chatWindow.scrollTop = chatWindow.scrollHeight;
+					// Handle any remaining buffer
+					if (buffer.trim()) {
+						try {
+							const obj = JSON.parse(buffer);
+							if (obj.message && obj.message.content) {
+								bubble.textContent += obj.message.content;
+								chatWindow.scrollTop = chatWindow.scrollHeight;
+							}
+							metadata.push(obj);
+						} catch (err) {
+							metadata.push({ raw: buffer });
+						}
 					}
-					metadata.push(obj);
 				} catch (err) {
-					metadata.push({ raw: buffer });
+					bubble.textContent = `Error: ${err.message}`;
+					bubble.className = "bg-red-100 text-red-900 p-2 rounded-lg max-w-md break-words";
+					console.error("Query error:", err);
 				}
-			}
 
 			// Attach click handler for metadata display
 			bubble.addEventListener("click", () => {

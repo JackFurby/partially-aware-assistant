@@ -100,21 +100,6 @@
 			</div>
 		</div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		<hr class="my-4 border-gray-300"/>
 		{% endif %}
 
@@ -259,10 +244,15 @@ document.addEventListener("DOMContentLoaded", function () {
 				placeholder.selected = true;
 				modelSelect.appendChild(placeholder);
 
-				data.forEach(name => {
+				data.forEach(model => {
 					const option = document.createElement("option");
-					option.value = name;
-					option.text = name;
+					option.value = model["model_name"];
+					// add model name and tags to option
+					if (model.tags && model.tags.length > 0) {
+						option.text = `${model["model_name"]} (${model.tags.join(", ")})`;
+					} else {
+						option.text = model["model_name"];
+					}
 					modelSelect.appendChild(option);
 				});
 			});
@@ -289,36 +279,36 @@ document.addEventListener("DOMContentLoaded", function () {
 		responseWindow.scrollTop = responseWindow.scrollHeight;
 
 		// Prepare assistant message container
-	const assistantMsg = document.createElement("div");
-	assistantMsg.className = "flex flex-col items-start";
+		const assistantMsg = document.createElement("div");
+		assistantMsg.className = "flex flex-col items-start";
 
-	const bubble = document.createElement("div");
-	bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-md break-words";
-	assistantMsg.appendChild(bubble);
+		const bubble = document.createElement("div");
+		bubble.className = "bg-gray-200 text-gray-900 p-2 rounded-lg max-w-md break-words";
+		assistantMsg.appendChild(bubble);
 
-	// Add "Show Sources" toggle
-	const showSourcesToggle = document.createElement("div");
-	showSourcesToggle.className = "text-xs text-blue-600 cursor-pointer mt-1 select-none";
-	showSourcesToggle.textContent = "Show Sources";
-	assistantMsg.appendChild(showSourcesToggle);
+		// Add "Show Sources" toggle
+		const showSourcesToggle = document.createElement("div");
+		showSourcesToggle.className = "text-xs text-blue-600 cursor-pointer mt-1 select-none";
+		showSourcesToggle.textContent = "Show Sources";
+		assistantMsg.appendChild(showSourcesToggle);
 
-	// Prepare chunks container (hidden by default)
-	const chunksContainer = document.createElement("div");
-	chunksContainer.className = "mt-2 text-xs text-gray-600 bg-gray-50 border rounded p-2 hidden";
-	assistantMsg.appendChild(chunksContainer);
+		// Prepare chunks container (hidden by default)
+		const chunksContainer = document.createElement("div");
+		chunksContainer.className = "mt-2 text-xs text-gray-600 bg-gray-50 border rounded p-2 hidden";
+		assistantMsg.appendChild(chunksContainer);
 
-	responseWindow.appendChild(assistantMsg);
+		responseWindow.appendChild(assistantMsg);
 
-	showSourcesToggle.addEventListener("click", () => {
-		const isHidden = chunksContainer.classList.contains("hidden");
-		if (isHidden) {
-			chunksContainer.classList.remove("hidden");
-			showSourcesToggle.textContent = "Hide Sources";
-		} else {
-			chunksContainer.classList.add("hidden");
-			showSourcesToggle.textContent = "Show Sources";
-		}
-	});
+		showSourcesToggle.addEventListener("click", () => {
+			const isHidden = chunksContainer.classList.contains("hidden");
+			if (isHidden) {
+				chunksContainer.classList.remove("hidden");
+				showSourcesToggle.textContent = "Hide Sources";
+			} else {
+				chunksContainer.classList.add("hidden");
+				showSourcesToggle.textContent = "Show Sources";
+			}
+		});
 
 		let buffer = "";
 
