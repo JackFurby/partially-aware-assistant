@@ -1,0 +1,28 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/chat": [
+		"src/routes/chat/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/login": [
+		"src/routes/+layout.ts"
+	],
+	"/rag": [
+		"src/routes/rag/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
+		"src/routes/settings/+page.ts",
+		"src/routes/+layout.ts"
+	],
+	"/users": [
+		"src/routes/+layout.ts"
+	],
+	"/users/[id]": [
+		"src/routes/users/[id]/+page.ts",
+		"src/routes/+layout.ts"
+	]
+}
