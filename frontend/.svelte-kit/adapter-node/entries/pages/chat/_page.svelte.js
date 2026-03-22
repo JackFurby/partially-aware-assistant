@@ -188,6 +188,7 @@ function _page($$renderer, $$props) {
           models = await getAgentModels(detail.chat.agent_id);
         }
         if (detail.chat.model_name) selectedModel = detail.chat.model_name;
+        selectedKbId = detail.chat.kb_id ?? null;
       } catch (e) {
         error = e.message;
       }
@@ -197,11 +198,21 @@ function _page($$renderer, $$props) {
       return (ns / 1e9).toFixed(2) + "s";
     }
     chatId = store_get($$store_subs ??= {}, "$page", page).url.searchParams.get("id") ? Number(store_get($$store_subs ??= {}, "$page", page).url.searchParams.get("id")) : null;
-    if (chatId !== null) loadChat(chatId);
+    if (chatId !== null && !streaming) {
+      loadChat(chatId);
+    } else if (chatId === null) {
+      messages = [];
+      currentChatId = null;
+      error = "";
+    }
     $$renderer2.push(`<div style="display:flex;flex-direction:column;height:100%;background:white;" class="svelte-23dtxz"><div style="padding:12px 16px;border-bottom:1px solid #eee;display:flex;gap:12px;align-items:center;flex-wrap:wrap;" class="svelte-23dtxz">`);
     $$renderer2.select(
       {
-        value: selectedAgentId,
+        value: (
+          // Restore agent/model from chat
+          // Save assistant message to chat history
+          selectedAgentId
+        ),
         style: "padding:6px;border:1px solid #ddd;border-radius:4px;",
         class: ""
       },

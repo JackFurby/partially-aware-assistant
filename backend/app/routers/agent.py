@@ -134,9 +134,10 @@ async def send_message(
     user_msg = Message(chat_id=chat.id, message=payload.message, role="user")
     db.add(user_msg)
 
-    # Update chat agent/model
+    # Update chat agent/model/kb
     chat.agent_id = agent.id
     chat.model_name = model.model_name
+    chat.kb_id = payload.kb_id
     await db.commit()
 
     # Reconstruct history from DB

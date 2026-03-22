@@ -80,6 +80,7 @@ class ChatOut(BaseModel):
     user_id: int
     agent_id: Optional[int] = None
     model_name: Optional[str] = None
+    kb_id: Optional[int] = None
     create_datetime: datetime
 
     model_config = {"from_attributes": True}
@@ -119,6 +120,7 @@ class SendMessageRequest(BaseModel):
     agent_id: int
     model_name: str
     message: str
+    kb_id: Optional[int] = None
 
 
 class SaveMessageRequest(BaseModel):
@@ -159,6 +161,7 @@ class KnowledgeBaseOut(BaseModel):
 
 
 class RAGQueryRequest(BaseModel):
+    chat_id: Optional[int] = None
     kb_id: int
     agent_id: int
     model_name: str

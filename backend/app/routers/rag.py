@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 
 from ..auth import current_active_user
 from ..database import get_async_session
-from ..models import Agent, KnowledgeBase, Model, User
+from ..models import Agent, Chat, KnowledgeBase, Message, Model, User
 from ..schemas import KnowledgeBaseOut, RAGQueryRequest
 from ..services.rag_service import RAGService
 
@@ -101,6 +101,33 @@ async def rag_query(
     if not kn_agent:
         raise HTTPException(status_code=404, detail="Knowledge base agent not found")
 
+    # Get or create chat record
+    if payload.chat_id:
+        chat = await db.get(Chat, payload.chat_id)
+        if not chat or chat.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Chat not found or access denied")
+    else:
+        chat = Chat(
+            name=payload.query[:50],
+            user_id=user.id,
+            agent_id=payload.agent_id,
+            model_name=payload.model_name,
+            kb_id=payload.kb_id,
+        )
+        db.add(chat)
+        await db.commit()
+        await db.refresh(chat)
+
+    # Save user message and update chat metadata
+    user_msg = Message(chat_id=chat.id, message=payload.query, role="user")
+    db.add(user_msg)
+    chat.agent_id = payload.agent_id
+    chat.model_name = payload.model_name
+    chat.kb_id = payload.kb_id
+    await db.commit()
+
+    chat_id = chat.id
+
     # Get RAG system prompt
     from sqlalchemy import select as sa_select
     from ..models import SystemSettings
@@ -143,7 +170,10 @@ async def rag_query(
     }
 
     async def generate():
-        # Send metadata first
+        # Send chat_id first so the frontend can track this chat
+        yield json.dumps({"type": "chat_id", "chat_id": chat_id}) + "\n"
+
+        # Send metadata
         metadata = {
             "type": "metadata",
             "relevant_chunks_text": [c[0] for c in relevant_chunks],

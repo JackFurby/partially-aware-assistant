@@ -42,9 +42,9 @@
   });
 
   // Load chat when URL param changes; reset state for new chat
-  $: if (chatId !== null) {
+  $: if (chatId !== null && !streaming) {
     loadChat(chatId);
-  } else {
+  } else if (chatId === null) {
     messages = [];
     currentChatId = null;
     streamedContent = '';
@@ -63,6 +63,7 @@
         models = await getAgentModels(detail.chat.agent_id);
       }
       if (detail.chat.model_name) selectedModel = detail.chat.model_name;
+      selectedKbId = detail.chat.kb_id ?? null;
     } catch (e: any) {
       error = e.message;
     }
@@ -103,8 +104,8 @@
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(isRag
-          ? { kb_id: selectedKbId, agent_id: selectedAgentId, model_name: selectedModel, query: userMessage }
-          : { chat_id: currentChatId, agent_id: selectedAgentId, model_name: selectedModel, message: userMessage }
+          ? { chat_id: currentChatId, kb_id: selectedKbId, agent_id: selectedAgentId, model_name: selectedModel, query: userMessage }
+          : { chat_id: currentChatId, agent_id: selectedAgentId, model_name: selectedModel, message: userMessage, kb_id: selectedKbId }
         )
       });
 
@@ -145,8 +146,8 @@
         }
       }
 
-      // Save to chat history (regular chat only)
-      if (!isRag && currentChatId && streamedContent) {
+      // Save assistant message to chat history
+      if (currentChatId && streamedContent) {
         await fetch('/api/chat/save_message', {
           method: 'POST',
           credentials: 'include',

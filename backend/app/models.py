@@ -127,6 +127,9 @@ class Chat(Base):
         Integer, ForeignKey("agent.id", ondelete="CASCADE"), nullable=True
     )
     model_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    kb_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("knowledge_base.id", ondelete="SET NULL"), nullable=True
+    )
     create_datetime: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now(), index=True
     )
